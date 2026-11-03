@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} img{max-width:100%} [hidden]{display:none!important}</style>
+<title>Math Rats 🐀🐀</title>
+<meta name="description" content="A cozy 3D algebra game starring two pet rats, Velma and Louise.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@500;700;900&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+</head>
+<body>
+
+<canvas id="game" tabindex="0" aria-label="The house. Use arrow keys or tap the floor to walk."></canvas>
+
+<div class="hud">
+  <div class="hud-left">
+    <div class="roomchip">
+      <div class="k" id="roomNum">Room 1 of 4</div>
+      <div class="rn" id="roomName">The Kitchen</div>
+      <div class="dots" id="dots"></div>
+    </div>
+    <button class="guide" id="guideBtn" title="Walk to the next puzzle (G)">🐾 Show me the way</button>
+  </div>
+  <div class="hud-right">
+    <button class="cheese" id="cheeseBtn" aria-label="Cheese collected. Open the joke book."><span class="wedge"></span><span id="cheeseN">0</span><small>Joke book</small></button>
+    <button class="btn-soft" id="recipeBtn">Recipe card</button>
+    <button class="btn-soft" id="settingsBtn">Settings</button>
+  </div>
+</div>
+
+<div class="tag" id="tagV">Velma</div>
+<div class="tag louise" id="tagL">Louise</div>
+<button class="act" id="actBtn" hidden></button>
+<div class="talk" id="talk" aria-live="polite"></div>
+<div class="hint-tap" id="tapHint">Tap the floor to walk · arrow keys or WASD on a keyboard</div>
+
+<!-- Title -->
+<div class="overlay" id="titleScreen">
+  <div class="card">
+    <div class="k">A two-rat algebra adventure</div>
+    <h1 class="title">Velma &amp; Louise:<br>House of <em>X</em></h1>
+    <p class="lede">Two sister rats. One very cozy house: kitchen, living room, bathroom and attic. A whole lot of hidden <b>x</b>'s, and a legendary snack stash at the very top.</p>
+    <ul class="howto">
+      <li><b>1</b><span>Tap a glowing ring and Velma scurries straight to it. You can also tap the floor, use the arrow keys or WASD, or press <b style="display:inline;background:none;width:auto;height:auto;font-size:inherit">🐾 Show me the way</b>. Louise always sticks by Velma's side.</span></li>
+      <li><b>2</b><span>Glowing rings are puzzles. Solve the equation to unlock what's inside. Cheese crumbs hide jokes.</span></li>
+      <li><b>3</b><span>Feeling speedy? Solve it in your head for bonus cheese. The puzzles grow with you as you get faster.</span></li>
+      <li><b>4</b><span>Solve all 3 puzzles in a room and the mouse hole opens to the next room.</span></li>
+    </ul>
+    <div class="row">
+      <button class="btn-main" id="startBtn">Start in the kitchen</button>
+      <button class="btn-ghost" id="contBtn" hidden></button>
+    </div>
+    <div class="title-links">
+      <button class="btn-ghost" id="titleSettings">Settings: sound and puzzle types</button>
+      <button class="btn-ghost" id="titleParent">For grown-ups</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe card -->
+<div class="overlay" id="recipe" hidden>
+  <div class="card recipe">
+    <div class="k">Louise's recipe card</div>
+    <h2 class="title" style="font-size:32px">The two-step recipe</h2>
+    <ol>
+      <li><b>Look at x.</b> What was done to it? Usually it was multiplied (or divided), then something was added (or subtracted).</li>
+      <li><b>Undo the + or − first</b> by doing the opposite to <i>both</i> sides.</li>
+      <li><b>Undo the × or ÷ next</b>, again on both sides.</li>
+      <li><b>Check it!</b> Put your answer back in. If both sides match, you win the snack.</li>
+    </ol>
+    <div class="note"><b>Negative numbers:</b> some answers are below zero, like the attic thermometer. To type one, type the number, then tap <b>+/−</b> to make it negative (or type a minus sign first). Tap <b>+/−</b> again to make it positive. On a number line, adding moves right and subtracting moves left, even past zero.</div>
+    <div class="note"><b>Calculator:</b> in step-by-step mode, tap <b>Calculator</b> to check your mental math before you press Check. Try it in your head first!</div>
+    <div class="note"><b>Opposites:</b> + undoes −, × undoes ÷. &nbsp;<b>Seesaw rule:</b> whatever you do to one side, do to the other so it stays balanced.</div>
+    <div class="note"><b>One-step:</b> only one thing was done to x, so one opposite undoes it. x + 5 = 12 → subtract 5. 3x = 18 → divide by 3.</div>
+    <div class="note"><b>x on both sides:</b> in 5x + 2 = 3x + 10, first subtract 3x from both sides to gather the x's. Then it's a normal two-step: 2x + 2 = 10.</div>
+    <div class="note"><b>Brackets are different:</b> in 3(x + 2) = 15 the + 2 is stuck inside with x, so divide by 3 first, then subtract 2. With 2(x + 3) − 4 = 10, work from the outside in: add 4, divide by 2, then subtract 3.</div>
+    <div class="row"><button class="btn-main" id="recipeClose">Got it</button></div>
+  </div>
+</div>
+
+
+<!-- Settings -->
+<div class="overlay" id="settings" hidden>
+  <div class="card">
+    <div class="k">Make it yours</div>
+    <h2 class="title" style="font-size:32px">Settings</h2>
+    <section class="set-group"><h3>Sound</h3>
+      <label class="switch"><input type="checkbox" id="setMusic"><span>Cozy background music</span></label>
+      <label class="range"><span>Volume</span><input type="range" id="setVol" min="0" max="1" step="0.05"></label>
+      <div class="song"><span id="songName"></span><button id="newSong" type="button">Play a different tune</button></div>
+      <label class="switch"><input type="checkbox" id="setSfx"><span>Sound effects</span></label>
+    </section>
+    <section class="set-group"><h3>Reading and help</h3>
+      <div class="k" style="padding-left:2px">Speech bubbles stay</div>
+      <div class="seg" id="talkSeg" role="radiogroup" aria-label="How long speech bubbles stay" style="padding-left:0">
+        <button role="radio" data-t="1">Long enough to read</button><button role="radio" data-t="1.7">Extra long</button><button role="radio" data-t="0">Until I close them</button>
+      </div>
+      <label class="switch"><input type="checkbox" id="setCalc"><span>On-screen calculator <small>A Calculator button in step-by-step mode, to check mental math before pressing Check</small></span></label>
+    </section>
+    <section class="set-group"><h3>Puzzle types for this run</h3>
+      <label class="switch"><input type="checkbox" id="tOne"><span>One-step <small>x + 5 = 12 · 3x = 18 · each room starts with one as a warm-up</small></span></label>
+      <label class="switch"><input type="checkbox" id="tTwo"><span>Two-step <small>3x + 4 = 19 · x/2 − 3 = 5 · 2(x + 1) = 14</small></span></label>
+      <label class="switch"><input type="checkbox" id="tThree"><span>Three-step <small>2(x + 3) − 4 = 10</small></span></label>
+      <label class="switch"><input type="checkbox" id="tBoth"><span>Variables on both sides <small>5x + 2 = 3x + 10</small></span></label>
+      <p class="set-note" id="typeNote" aria-live="polite"></p>
+    </section>
+    <section class="set-group"><h3>Difficulty</h3>
+      <label class="switch"><input type="checkbox" id="setAdaptive"><span>Adaptive <small>Numbers grow after quick, clean solves and get friendlier after a struggle</small></span></label>
+      <div class="seg" id="levelSeg" role="radiogroup" aria-label="Fixed difficulty">
+        <button role="radio" data-l="1">Easy</button><button role="radio" data-l="2">Medium</button><button role="radio" data-l="3">Hard</button><button role="radio" data-l="4">Expert</button>
+      </div>
+    </section>
+    <div class="row"><button class="btn-main" id="setDone">Done</button></div>
+  </div>
+</div>
+
+<!-- Grown-ups -->
+<div class="overlay" id="parent" hidden>
+  <div class="card wide">
+    <div class="sheet-head">
+      <div><div class="k">For grown-ups</div><h2 class="title" style="font-size:30px">Progress report</h2></div>
+      <button class="x-close" id="parentClose" aria-label="Close progress report">×</button>
+    </div>
+    <div id="parentLock" style="display:grid;gap:12px;justify-items:start">
+      <p class="lede" style="font-size:16px">Accuracy, speed and sticking points for each puzzle type, saved on this device.</p>
+      <button class="hold" id="holdBtn"><span class="fill"></span><span class="lbl">Press and hold for 2 seconds to open</span></button>
+    </div>
+    <div id="parentBody" hidden style="display:grid;gap:14px"></div>
+  </div>
+</div>
+
+<!-- Puzzle sheet -->
+<div class="sheet" id="sheet" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <div class="sheet-head">
+      <div><div class="k" id="pKicker"></div><h2 id="pTitle"></h2></div>
+      <button class="x-close" id="pClose" aria-label="Close puzzle">×</button>
+    </div>
+    <div class="story" id="pStory"></div>
+    <div class="eqbox">
+      <div class="eq" id="pEq"></div>
+      <div class="tiles" id="pTiles"></div>
+    </div>
+    <div class="work-wrap"><div class="work" id="pWork" aria-label="Working"></div></div>
+    <div class="feedback" id="pFeedback"></div>
+    <div id="pControls" style="display:grid;gap:10px"></div>
+    <div class="calc" id="calc" hidden role="group" aria-label="Calculator">
+      <div class="calc-head"><span>Louise's pocket calculator</span><button id="calcClose" type="button" aria-label="Close calculator">×</button></div>
+      <div class="calc-screen" aria-live="polite"><div id="calcExpr"></div><div id="calcOut">0</div></div>
+      <div class="calc-pad" id="calcPad"></div>
+      <p class="calc-note">For checking your thinking. Type your answer in the box above.</p>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn-soft" id="hintBtn">Ask Louise for a hint</button>
+      <button class="btn-soft" id="calcBtn" aria-expanded="false" hidden>🧮 Calculator</button>
+      <button class="linkish" id="pRecipe">Open recipe card</button>
+    </div>
+  </div>
+</div>
+
+<!-- Victory -->
+<div class="overlay" id="victory" hidden>
+  <div class="card">
+    <div class="k">The attic, back corner</div>
+    <h2 class="title">The Legendary Snack Stash!</h2>
+    <p class="lede">Velma and Louise squeeze through the last mouse hole and find it: a mountain of sunflower seeds, three whole crackers and one perfect blueberry. They share it, obviously. They're sisters.</p>
+    <div class="stats">
+      <div class="stat"><span class="k">Cheese</span><b id="vCheese">0</b></div>
+      <div class="stat"><span class="k">Puzzles</span><b id="vPuzzles">12</b></div>
+      <div class="stat"><span class="k">In-your-head</span><b id="vHead">0</b></div>
+      <div class="stat"><span class="k">Jokes found</span><b id="vJokes">0</b></div>
+    </div>
+    <div class="row"><button class="btn-main" id="againBtn">Play again with new numbers</button></div>
+  </div>
+</div>
+<!-- Joke book -->
+<div class="overlay" id="jokebook" hidden>
+  <div class="card">
+    <div class="sheet-head">
+      <div><div class="k" id="jokeCount">0 found this run</div><h2 class="title" style="font-size:32px">The joke book</h2></div>
+      <button class="x-close" id="jokeClose" aria-label="Close joke book">×</button>
+    </div>
+    <ol class="jokes" id="jokeList"></ol>
+  </div>
+</div>
+<div class="fade" id="fade"><div id="fadeText"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

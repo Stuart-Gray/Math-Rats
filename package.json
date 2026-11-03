@@ -1,0 +1,17 @@
+{
+  "name": "math-rats",
+  "version": "5.0.0",
+  "private": true,
+  "description": "Velma & Louise: House of X. A cozy 3D algebra game starring two pet rats.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/copy-single.mjs",
+    "preview": "vite preview",
+    "test": "node scripts/check-puzzles.mjs"
+  },
+  "devDependencies": {
+    "vite": "~7.3.6",
+    "vite-plugin-singlefile": "~2.3.0"
+  }
+}
