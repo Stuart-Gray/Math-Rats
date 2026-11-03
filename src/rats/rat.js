@@ -1,0 +1,101 @@
+/* Velma and Louise, sculpted from their photos: chocolate brown, big cupped pink ears,
+   fawn muzzle, pink nose, glossy black eyes, long whiskers and thick scaly tails.
+   Louise is lighter with a broad white belly; Velma has a thin white chest stripe. */
+import { THREE } from '../lib/three.js';
+import { scene, mesh } from '../rooms/world.js';
+
+/* rats — sculpted from Velma & Louise's photos */
+function furTextures(){
+  const c=document.createElement('canvas'); c.width=c.height=512; const g=c.getContext('2d');
+  g.fillStyle='#e4e0dc'; g.fillRect(0,0,512,512);
+  for(let i=0;i<9000;i++){
+    const x=Math.random()*512, y=Math.random()*512, len=6+Math.random()*14, lean=(Math.random()-0.5)*3;
+    const light=Math.random()<0.45;
+    g.strokeStyle= light?`rgba(255,248,240,${0.18+Math.random()*0.3})`:`rgba(20,10,5,${0.12+Math.random()*0.22})`;
+    g.lineWidth=0.8+Math.random()*1.4; g.beginPath(); g.moveTo(x,y); g.lineTo(x+lean,y+len); g.stroke();
+  }
+  const mk=()=>{ const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,2); return t; };
+  const map=mk(); map.encoding=THREE.sRGBEncoding; return {map,bump:mk()};
+}
+function tailTexture(){
+  const c=document.createElement('canvas'); c.width=64; c.height=512; const g=c.getContext('2d');
+  g.fillStyle='#ffffff'; g.fillRect(0,0,64,512);
+  for(let y=0;y<512;y+=7){ g.fillStyle='rgba(90,50,40,0.35)'; g.fillRect(0,y,64,1.5);
+    for(let x=0;x<64;x+=8){ g.fillStyle='rgba(90,50,40,0.18)'; g.fillRect(x+((y/7)%2)*4,y,1,7); } }
+  g.fillStyle='rgba(70,40,30,0.35)'; g.fillRect(0,0,24,512); // darker top stripe
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,6); t.encoding=THREE.sRGBEncoding; return t;
+}
+const FUR=furTextures(), TAILTEX=tailTexture();
+const KEYS=[[0,0,.40],[.05,.27,.40],[.17,.43,.42],[.40,.45,.43],[.57,.37,.44],[.67,.29,.47],[.76,.275,.49],[.86,.205,.47],[.95,.11,.44],[.985,.05,.43],[1,0,.43]];
+function profile(t){
+  for(let i=1;i<KEYS.length;i++) if(t<=KEYS[i][0]){ const a=KEYS[i-1], b=KEYS[i]; let u=(t-a[0])/(b[0]-a[0]); u=u*u*(3-2*u); return [a[1]+(b[1]-a[1])*u, a[2]+(b[2]-a[2])*u]; }
+  return [0,.43];
+}
+export function makeRat(isLouise){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const base=new THREE.Color(isLouise?0x4a3329:0x3d271f), dark=base.clone().multiplyScalar(0.62);
+  const fawn=new THREE.Color(0x9a7563), white=new THREE.Color(0xf3ece4), pinkN=new THREE.Color(0xd9989a);
+  const geo=new THREE.SphereGeometry(1,56,40); const pos=geo.attributes.position; const cols=new Float32Array(pos.count*3); const col=new THREE.Color();
+  for(let i=0;i<pos.count;i++){
+    const s=pos.getY(i), rx=pos.getX(i), rz=pos.getZ(i); const m=Math.hypot(rx,rz)||1;
+    const dx=rx/m, dy=-rz/m; const ring=Math.sqrt(Math.max(0,1-s*s));
+    const t=(s+1)/2; const [R,cy]=profile(t);
+    const yScale = dy>0?0.88:0.72;
+    pos.setXYZ(i, dx*R*ring/Math.max(ring,1e-6)*Math.min(1,ring*8)*1.05, cy+dy*R*Math.min(1,ring*8)*yScale, -0.95+t*2.0);
+    // colour
+    col.copy(base);
+    if(dy>0.25) col.lerp(dark,(dy-0.25)*0.9);
+    const ang=Math.atan2(dx,-dy);
+    if(isLouise){
+      const edge=-0.18+0.12*Math.sin(t*26)+0.07*Math.sin(ang*6);
+      if(t>0.16&&t<0.7&&dy<edge) col.copy(white); else if(t>0.16&&t<0.7&&dy<edge+0.08) col.lerp(white,0.5);
+    } else {
+      if(t>0.3&&t<0.66&&dy<-0.72+0.06*Math.sin(t*30)) col.copy(white);
+    }
+    if(t>0.84){ const k=Math.min(1,(t-0.84)/0.1); col.lerp(fawn,k*(dy<0.3?0.85:0.45)); }
+    if(t>0.975) col.lerp(pinkN,Math.min(1,(t-0.975)/0.02));
+    cols[i*3]=col.r; cols[i*3+1]=col.g; cols[i*3+2]=col.b;
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(cols,3)); geo.computeVertexNormals();
+  const furMat=new THREE.MeshStandardMaterial({vertexColors:true,map:FUR.map,bumpMap:FUR.bump,bumpScale:0.025,roughness:0.78});
+  body.add(mesh(geo,furMat));
+  // ears: big, cupped, pink-beige
+  const earOut=new THREE.MeshStandardMaterial({color:0xd8a39b,roughness:0.55,side:THREE.DoubleSide,emissive:0x3a1512,emissiveIntensity:0.35});
+  const earIn=new THREE.MeshStandardMaterial({color:0xc98a86,roughness:0.6,side:THREE.DoubleSide});
+  [-1,1].forEach(s=>{
+    const ear=new THREE.Group();
+    const cup=mesh(new THREE.SphereGeometry(0.2,20,14,0,Math.PI*2,0,Math.PI*0.55),earOut); cup.scale.set(1,1.15,0.45); ear.add(cup);
+    const inner=mesh(new THREE.SphereGeometry(0.17,18,12,0,Math.PI*2,0,Math.PI*0.5),earIn,{cast:false}); inner.scale.set(1,1.12,0.38); inner.position.z=0.015; ear.add(inner);
+    ear.rotation.set(-Math.PI/2+0.35,0,0); ear.rotateOnWorldAxis(new THREE.Vector3(0,1,0),-0.55*s); ear.rotateOnWorldAxis(new THREE.Vector3(0,0,1),-0.45*s);
+    ear.position.set(0.19*s,0.73,0.43); body.add(ear);
+    // eye
+    const eye=mesh(new THREE.SphereGeometry(0.058,16,12),new THREE.MeshStandardMaterial({color:0x070405,roughness:0.06,metalness:0.1})); eye.position.set(0.172*s,0.585,0.70); body.add(eye);
+    const shine=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); shine.position.set(0.19*s,0.61,0.73); body.add(shine);
+    // paws: pink, little fingers
+    [[0.27,0.28],[0.3,-0.62]].forEach(([px,pz],k)=>{
+      const paw=new THREE.Group(); const pm=new THREE.MeshStandardMaterial({color:0xe2aaa6,roughness:0.6});
+      const palm=mesh(new THREE.SphereGeometry(0.075,10,8),pm); palm.scale.set(1,0.45,1.3); paw.add(palm);
+      for(let f=0;f<4;f++){ const fg=mesh(new THREE.CylinderGeometry(0.014,0.012,0.09,5),pm); fg.rotation.x=Math.PI/2; fg.position.set((f-1.5)*0.035,0,0.1); fg.rotation.z=(f-1.5)*0.25; paw.add(fg); }
+      paw.position.set(px*s,0.04,pz); if(k===1) paw.scale.set(1.2,1,1.5); g.add(paw);
+    });
+  });
+  // whiskers: long, fine, drooping
+  const wp=[];
+  [-1,1].forEach(s=>{ for(let k=0;k<7;k++){ const ox=0.06*s, oy=0.44+(k%3)*0.018, oz=0.93-(k%4)*0.025;
+    const ang=-0.35+k*0.12, L=0.55+Math.random()*0.3;
+    const mx=ox+Math.cos(ang)*L*0.5*s, mz=oz+Math.sin(ang)*L*0.5+0.1, my=oy+0.02;
+    const ex=ox+Math.cos(ang)*L*s, ez=oz+Math.sin(ang)*L+0.12, ey=oy-0.06-k*0.008;
+    wp.push(new THREE.Vector3(ox,oy,oz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(ex,ey,ez)); } });
+  body.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(wp),new THREE.LineBasicMaterial({color:0xe8e0d8,transparent:true,opacity:0.75})));
+  // tail: thick at the base, tapering, scaly
+  const tail=new THREE.Group(); tail.position.set(0,0.36,-0.9); g.add(tail);
+  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(0,-0.22,-0.45),new THREE.Vector3(0.12,-0.32,-1.0),new THREE.Vector3(0.45,-0.33,-1.55),new THREE.Vector3(0.95,-0.33,-1.85)]);
+  const tg=new THREE.TubeGeometry(curve,48,1,8,false); const tp=tg.attributes.position;
+  for(let i=0;i<=48;i++){ const c=curve.getPointAt(i/48), r=0.085*(1-i/48)+0.012;
+    for(let j=0;j<=8;j++){ const idx=i*9+j; const v=new THREE.Vector3().fromBufferAttribute(tp,idx).sub(c).multiplyScalar(r).add(c); tp.setXYZ(idx,v.x,v.y,v.z); } }
+  tg.computeVertexNormals();
+  tail.add(mesh(tg,new THREE.MeshStandardMaterial({color:0xc29486,map:TAILTEX,roughness:0.55})));
+  g.scale.setScalar(1.1);
+  scene.add(g);
+  return {g,body,tail,heading:0,moving:0};
+}
