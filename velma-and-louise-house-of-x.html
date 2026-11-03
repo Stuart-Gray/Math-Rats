@@ -1,0 +1,1387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} img{max-width:100%} [hidden]{display:none!important}</style>
+<title>Velma &amp; Louise: House of X</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@500;700;900&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: full-bleed 3D house; HUD pinned to corners; puzzles open as a lined-notebook sheet from the bottom. */
+:root{
+  --night:#2b2030;      /* page ground behind the canvas */
+  --paper:#fff4df;      /* notebook / card surface */
+  --paper-2:#f7e2bd;    /* shaded paper */
+  --ink:#3a2438;        /* plum ink for text */
+  --ink-soft:#6e5269;
+  --honey:#f0a92e;      /* accent: cheese + glowing puzzles */
+  --honey-deep:#b8740a;
+  --sage:#5f9272;       /* correct */
+  --berry:#c9455f;      /* rat-nose pink, gentle "try again" */
+  --rule:#b9d3e6;       /* notebook lines */
+  --font-display:"Grandstander","Trebuchet MS",system-ui,sans-serif;
+  --font-body:"Atkinson Hyperlegible",system-ui,-apple-system,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:var(--night);color:var(--ink);font-family:var(--font-body);font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent}
+canvas#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+button{font-family:var(--font-display);cursor:pointer;border:0}
+button:focus-visible,input:focus-visible{outline:3px solid var(--honey);outline-offset:2px}
+
+/* HUD */
+.hud{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));right:calc(12px + env(safe-area-inset-right,0px));
+  display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none;z-index:5}
+.hud > *{pointer-events:auto}
+.roomchip{background:var(--paper);border-radius:14px;padding:8px 14px 9px;box-shadow:0 4px 0 rgba(0,0,0,.25);min-width:0}
+.roomchip .rn{font-family:var(--font-display);font-weight:900;font-size:20px;line-height:1.1}
+.dots{display:flex;gap:6px;margin-top:5px;align-items:center;font-size:12px;color:var(--ink-soft)}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink-soft);background:transparent}
+.dot.on{background:var(--sage);border-color:var(--sage)}
+.hud-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.cheese{background:var(--honey);color:var(--ink);font-family:var(--font-display);font-weight:900;font-size:20px;border-radius:14px;padding:8px 14px;box-shadow:0 4px 0 var(--honey-deep);display:flex;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.wedge{width:0;height:0;border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:18px solid #ffe08a;filter:drop-shadow(0 1px 0 var(--honey-deep))}
+.btn-soft{background:var(--paper);color:var(--ink);font-weight:700;font-size:15px;border-radius:14px;padding:10px 14px;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.btn-soft:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+
+/* name tags above the rats */
+.tag{position:fixed;left:0;top:0;transform:translate(-50%,-100%);font-family:var(--font-display);font-weight:700;font-size:13px;
+  background:rgba(43,32,48,.78);color:#fff4df;padding:2px 8px;border-radius:999px;pointer-events:none;white-space:nowrap;z-index:3}
+.tag.louise{background:rgba(255,244,223,.9);color:var(--ink)}
+
+/* action button */
+.act{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom,0px));z-index:6;
+  background:var(--honey);color:var(--ink);font-weight:900;font-size:19px;padding:14px 22px;border-radius:18px;box-shadow:0 5px 0 var(--honey-deep);
+  max-width:calc(100% - 32px);animation:nudge 1.4s ease-in-out infinite}
+.act small{display:block;font-family:var(--font-body);font-weight:400;font-size:12px;opacity:.8}
+@keyframes nudge{50%{transform:translateX(-50%) translateY(-4px)}}
+
+/* speech bubbles */
+.talk{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:6;
+  width:min(560px,calc(100% - 32px));display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.bubble{background:var(--paper);border-radius:16px;padding:10px 14px;box-shadow:0 4px 0 rgba(0,0,0,.25);font-size:16px;line-height:1.4;
+  display:flex;gap:10px;align-items:flex-start;animation:pop .25s ease-out}
+.who{font-family:var(--font-display);font-weight:900;font-size:13px;border-radius:999px;padding:2px 9px;flex:none;margin-top:1px}
+.who.v{background:var(--night);color:var(--paper)}
+.who.l{background:var(--paper-2);color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink-soft)}
+.who.n{background:var(--honey);color:var(--ink)}
+@keyframes pop{from{transform:scale(.92);opacity:0}}
+
+.hint-tap{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:4;
+  color:var(--paper);font-size:13px;opacity:.75;pointer-events:none;text-align:right;max-width:200px}
+
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:rgba(43,32,48,.55);overflow:auto}
+.card{background:var(--paper);border-radius:22px;box-shadow:0 8px 0 rgba(0,0,0,.3);width:min(560px,100%);padding:24px;display:flex;flex-direction:column;gap:14px}
+.title{font-family:var(--font-display);font-weight:900;font-size:clamp(30px,7vw,46px);line-height:1;text-wrap:balance;margin:0}
+.title em{font-style:normal;color:var(--honey-deep)}
+.lede{font-size:18px;line-height:1.45;margin:0;color:var(--ink-soft)}
+.howto{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.howto li{display:flex;gap:10px;align-items:baseline;line-height:1.4}
+.howto b{font-family:var(--font-display);flex:none;width:22px;height:22px;border-radius:50%;background:var(--honey);display:grid;place-items:center;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.btn-main{background:var(--honey);color:var(--ink);font-weight:900;font-size:19px;border-radius:16px;padding:14px 20px;box-shadow:0 5px 0 var(--honey-deep)}
+.btn-main:active{transform:translateY(3px);box-shadow:0 2px 0 var(--honey-deep)}
+.btn-ghost{background:transparent;color:var(--ink);font-weight:700;font-size:16px;border-radius:16px;padding:12px 16px;box-shadow:inset 0 0 0 2px var(--ink-soft)}
+.recipe ol{margin:0;padding-left:22px;display:grid;gap:8px;line-height:1.45}
+.recipe .note{background:var(--paper-2);border-radius:12px;padding:10px 12px;line-height:1.45}
+.k{font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+
+/* puzzle sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:15;display:flex;justify-content:center;
+  padding:0 max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));pointer-events:none}
+.sheet .card{pointer-events:auto;width:min(640px,100%);max-height:calc(92vh - env(safe-area-inset-top,0px));overflow:auto;border-radius:22px 22px 0 0;
+  padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));gap:12px;animation:rise .3s ease-out}
+@keyframes rise{from{transform:translateY(40px);opacity:0}}
+.sheet-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.sheet-head h2{font-family:var(--font-display);font-weight:900;font-size:26px;margin:2px 0 0;line-height:1.1}
+.x-close{background:var(--paper-2);color:var(--ink);width:40px;height:40px;border-radius:12px;font-size:22px;font-weight:900;flex:none}
+.story{display:grid;gap:8px}
+.story p{margin:0;display:flex;gap:8px;align-items:flex-start;line-height:1.45}
+.eqbox{background:#fff;border-radius:16px;padding:14px 12px;display:grid;gap:10px;justify-items:center;box-shadow:inset 0 0 0 2px var(--paper-2)}
+.eq{font-family:var(--font-display);font-weight:700;font-size:clamp(30px,8vw,42px);line-height:1.2;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.eq i,.work i{font-style:normal;color:var(--honey-deep);font-weight:900}
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:.78em;line-height:1;margin:0 .05em}
+.frac > span:first-child{border-bottom:.08em solid currentColor;padding:0 .15em .05em}
+.frac > span:last-child{padding-top:.05em}
+.tiles{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;max-width:100%}
+.side{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-end;justify-content:center;max-width:46%}
+.tx{width:22px;height:40px;border-radius:6px;background:var(--honey);color:var(--ink);font-family:var(--font-display);font-weight:900;display:grid;place-items:center;font-size:15px;transition:opacity .4s,transform .4s}
+.t1{width:14px;height:14px;border-radius:4px;background:#ffd970;box-shadow:inset 0 0 0 1.5px var(--honey-deep);transition:opacity .4s,transform .4s}
+.gone{opacity:.15;transform:scale(.7)}
+.dim{opacity:.3}
+.grp{display:flex;flex-wrap:wrap;gap:3px;padding:3px;border-radius:6px;box-shadow:inset 0 0 0 1.5px var(--rule);max-width:70px}
+.grp.hi{box-shadow:inset 0 0 0 2px var(--sage);background:rgba(95,146,114,.12)}
+.eqsign{font-family:var(--font-display);font-weight:900;font-size:26px;color:var(--ink-soft)}
+.tiles-cap{font-size:12px;color:var(--ink-soft);text-align:center}
+.work-wrap{border-radius:12px;background:#fff;box-shadow:inset 0 0 0 2px var(--paper-2);padding:10px 8px;overflow-x:auto}
+.work-wrap:has(.work:empty){display:none}
+.work{display:grid;grid-template-columns:auto auto auto auto 34px auto auto;justify-content:center;align-items:center;column-gap:6px;row-gap:2px;
+  font-family:var(--font-display);font-weight:700;font-size:clamp(22px,6vw,28px);font-variant-numeric:tabular-nums;white-space:nowrap;margin:0}
+.work > span{min-height:40px;display:flex;align-items:center}
+.work .lab{font-family:var(--font-body);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);padding-right:8px}
+.work .cA{justify-content:flex-end}
+.work .cB{justify-content:flex-start}
+.work .cE{justify-content:center;color:var(--ink-soft)}
+.work .cD{justify-content:flex-start}
+.work .opr{color:var(--berry)}
+.work .rule{grid-column:2 / -1;min-height:0;height:0;border-top:3px solid var(--ink);margin:4px 0}
+.work .q{display:inline-grid;place-items:center;min-width:46px;height:36px;border-radius:8px;border:2.5px dashed var(--honey-deep);color:var(--honey-deep);padding:0 6px}
+.work .q.filled{border:0;color:var(--ink);background:rgba(95,146,114,.16)}
+.cn{position:relative;display:inline-block}
+.cn.x{opacity:.55}
+.cn.x::after{content:"";position:absolute;left:-12%;right:-12%;top:52%;border-top:3.5px solid var(--berry);transform:rotate(-28deg) scaleX(1);transform-origin:left center;animation:slash .45s ease-out}
+@keyframes slash{from{transform:rotate(-28deg) scaleX(0)}}
+@media (prefers-reduced-motion:reduce){.cn.x::after{animation:none}}
+.prompt{font-family:var(--font-display);font-weight:700;font-size:19px;margin:0;line-height:1.3}
+.ops{display:grid;gap:8px}
+.op{background:var(--paper-2);color:var(--ink);font-size:18px;font-weight:700;text-align:left;padding:13px 16px;border-radius:14px;box-shadow:0 3px 0 rgba(58,36,56,.18)}
+.op:active{transform:translateY(2px)}
+.op.no{background:#f6d4da;color:var(--ink);box-shadow:none;opacity:.7}
+.answer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.answer .lhs{font-family:var(--font-display);font-weight:700;font-size:28px;white-space:nowrap}
+.answer input{font-family:var(--font-display);font-weight:700;font-size:28px;width:110px;padding:6px 10px;border-radius:12px;border:3px solid var(--ink-soft);background:#fff;color:var(--ink);text-align:center}
+.pm{background:var(--paper-2);color:var(--ink);font-size:22px;font-weight:900;width:52px;height:52px;border-radius:12px}
+.feedback{border-radius:14px;padding:0;line-height:1.45}
+.feedback:not(:empty){padding:10px 12px}
+.feedback.good{background:rgba(95,146,114,.16)}
+.feedback.oops{background:rgba(201,69,95,.12)}
+.feedback.hint{background:var(--paper-2)}
+.sheet-foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+.linkish{background:none;color:var(--ink-soft);text-decoration:underline;font-family:var(--font-body);font-size:15px;padding:8px 2px}
+.check{font-family:var(--font-display);font-size:20px;font-weight:700;background:rgba(95,146,114,.16);border-radius:14px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+.check b{color:var(--sage)}
+.reward{font-family:var(--font-display);font-weight:900;font-size:22px;color:var(--honey-deep)}
+.fade{position:fixed;inset:0;background:var(--night);z-index:30;opacity:0;pointer-events:none;transition:opacity .45s}
+.fade.on{opacity:1}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:var(--paper-2);border-radius:14px;padding:10px 14px;min-width:110px}
+.stat b{display:block;font-family:var(--font-display);font-size:28px;font-variant-numeric:tabular-nums}
+
+/* settings + grown-ups */
+.card.wide{width:min(760px,100%)}
+.set-group{display:grid;gap:10px;border-top:2px solid var(--paper-2);padding-top:12px}
+.set-group h3,.h3{font-family:var(--font-display);font-weight:900;font-size:18px;margin:0}
+.switch{display:flex;gap:12px;align-items:center;line-height:1.35;cursor:pointer}
+.switch small{display:block;color:var(--ink-soft);font-size:13px}
+.switch input{appearance:none;-webkit-appearance:none;flex:none;width:50px;height:30px;border-radius:999px;background:var(--paper-2);box-shadow:inset 0 0 0 2px var(--ink-soft);position:relative;cursor:pointer;margin:0;transition:background .2s}
+.switch input::before{content:"";position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--ink-soft);transition:transform .2s,background .2s}
+.switch input:checked{background:var(--sage);box-shadow:none}
+.switch input:checked::before{transform:translateX(20px);background:var(--paper)}
+.range{display:flex;gap:12px;align-items:center;padding-left:62px;font-size:14px;color:var(--ink-soft)}
+.range input{flex:1;min-width:0;accent-color:var(--honey-deep)}
+.set-note{margin:0;color:var(--berry);font-size:14px;min-height:0}
+.set-note:empty{display:none}
+.seg{display:flex;flex-wrap:wrap;gap:6px;padding-left:62px}
+.seg button{background:var(--paper-2);color:var(--ink);font-weight:700;font-size:15px;border-radius:12px;padding:9px 14px}
+.seg button[aria-checked="true"]{background:var(--honey);box-shadow:0 3px 0 var(--honey-deep)}
+.title-links{display:flex;gap:6px;flex-wrap:wrap}
+.hold{position:relative;overflow:hidden;background:var(--night);color:var(--paper);font-weight:900;font-size:17px;border-radius:16px;padding:16px 22px;touch-action:none;user-select:none;-webkit-user-select:none}
+.hold .fill{position:absolute;inset:0;background:var(--honey-deep);transform:scaleX(0);transform-origin:left;transition:transform .15s}
+.hold.holding .fill{transform:scaleX(1);transition:transform 2s linear}
+.hold .lbl{position:relative}
+.note-p{margin:0;line-height:1.5;background:var(--paper-2);border-radius:12px;padding:10px 12px}
+.tablewrap{overflow-x:auto;border-radius:12px;box-shadow:inset 0 0 0 2px var(--paper-2)}
+.ptable{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums;min-width:620px}
+.ptable th,.ptable td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--paper-2);white-space:nowrap}
+.ptable thead th{font-family:var(--font-display);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.ptable tbody th{font-weight:700}
+.bar{display:inline-block;width:46px;height:8px;border-radius:4px;background:var(--paper-2);margin-right:6px;vertical-align:middle;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--sage)}
+.off{font-size:11px;font-weight:700;color:var(--ink-soft);background:var(--paper-2);border-radius:6px;padding:1px 6px;margin-left:4px}
+.muted{color:var(--ink-soft)}
+.small{font-size:13px;line-height:1.45;margin:0}
+.hist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hist li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;padding:8px 10px;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1.5px var(--paper-2)}
+.eqp{font-family:var(--font-display);font-weight:700;font-size:16px}
+.hist .muted{font-size:13px;flex:1;min-width:0}
+.pill{font-size:12px;font-weight:700;border-radius:999px;padding:2px 9px}
+.pill.ok{background:rgba(95,146,114,.18);color:#2f5a3f}
+.pill.meh{background:rgba(240,169,46,.22);color:#6b4306}
+#resetRow{align-items:center}
+@media (prefers-reduced-motion:reduce){.act{animation:none}.bubble,.sheet .card{animation:none}}
+@media (max-width:480px){.roomchip .rn{font-size:17px}.cheese{font-size:17px}.btn-soft{font-size:13px;padding:9px 11px}.act{bottom:calc(120px + env(safe-area-inset-bottom,0px))}}
+</style>
+</head>
+<body>
+
+<canvas id="game" tabindex="0" aria-label="The house. Use arrow keys or tap the floor to walk."></canvas>
+
+<div class="hud">
+  <div class="roomchip">
+    <div class="k" id="roomNum">Room 1 of 3</div>
+    <div class="rn" id="roomName">The Kitchen</div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div class="hud-right">
+    <div class="cheese" aria-label="Cheese collected"><span class="wedge"></span><span id="cheeseN">0</span></div>
+    <button class="btn-soft" id="recipeBtn">Recipe card</button>
+    <button class="btn-soft" id="settingsBtn">Settings</button>
+  </div>
+</div>
+
+<div class="tag" id="tagV">Velma</div>
+<div class="tag louise" id="tagL">Louise</div>
+<button class="act" id="actBtn" hidden></button>
+<div class="talk" id="talk" aria-live="polite"></div>
+<div class="hint-tap" id="tapHint">Tap the floor to walk · arrow keys or WASD on a keyboard</div>
+
+<!-- Title -->
+<div class="overlay" id="titleScreen">
+  <div class="card">
+    <div class="k">A two-rat algebra adventure</div>
+    <h1 class="title">Velma &amp; Louise:<br>House of <em>X</em></h1>
+    <p class="lede">Two sister rats. One very cozy house. A whole lot of hidden <b>x</b>'s, and a legendary snack stash in the attic.</p>
+    <ul class="howto">
+      <li><b>1</b><span>Walk with the arrow keys (or WASD), or tap the floor. Louise always sticks by Velma's side.</span></li>
+      <li><b>2</b><span>Glowing rings are puzzles. Solve the two-step equation to unlock what's inside.</span></li>
+      <li><b>3</b><span>Feeling speedy? Solve it in your head for bonus cheese. The puzzles grow with you as you get faster.</span></li>
+      <li><b>4</b><span>Solve all 3 puzzles in a room and the mouse hole opens to the next room.</span></li>
+    </ul>
+    <div class="row">
+      <button class="btn-main" id="startBtn">Start in the kitchen</button>
+      <button class="btn-ghost" id="contBtn" hidden></button>
+    </div>
+    <div class="title-links">
+      <button class="btn-ghost" id="titleSettings">Settings: sound and puzzle types</button>
+      <button class="btn-ghost" id="titleParent">For grown-ups</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recipe card -->
+<div class="overlay" id="recipe" hidden>
+  <div class="card recipe">
+    <div class="k">Louise's recipe card</div>
+    <h2 class="title" style="font-size:32px">The two-step recipe</h2>
+    <ol>
+      <li><b>Look at x.</b> What was done to it? Usually it was multiplied (or divided), then something was added (or subtracted).</li>
+      <li><b>Undo the + or − first</b> by doing the opposite to <i>both</i> sides.</li>
+      <li><b>Undo the × or ÷ next</b>, again on both sides.</li>
+      <li><b>Check it!</b> Put your answer back in. If both sides match, you win the snack.</li>
+    </ol>
+    <div class="note"><b>Opposites:</b> + undoes −, × undoes ÷. &nbsp;<b>Seesaw rule:</b> whatever you do to one side, do to the other so it stays balanced.</div>
+    <div class="note"><b>One-step:</b> only one thing was done to x, so one opposite undoes it. x + 5 = 12 → subtract 5. 3x = 18 → divide by 3.</div>
+    <div class="note"><b>x on both sides:</b> in 5x + 2 = 3x + 10, first subtract 3x from both sides to gather the x's. Then it's a normal two-step: 2x + 2 = 10.</div>
+    <div class="note"><b>Brackets are different:</b> in 3(x + 2) = 15 the + 2 is stuck inside with x, so divide by 3 first, then subtract 2. With 2(x + 3) − 4 = 10, work from the outside in: add 4, divide by 2, then subtract 3.</div>
+    <div class="row"><button class="btn-main" id="recipeClose">Got it</button></div>
+  </div>
+</div>
+
+
+<!-- Settings -->
+<div class="overlay" id="settings" hidden>
+  <div class="card">
+    <div class="k">Make it yours</div>
+    <h2 class="title" style="font-size:32px">Settings</h2>
+    <section class="set-group"><h3>Sound</h3>
+      <label class="switch"><input type="checkbox" id="setMusic"><span>Cozy background music</span></label>
+      <label class="range"><span>Volume</span><input type="range" id="setVol" min="0" max="1" step="0.05"></label>
+      <label class="switch"><input type="checkbox" id="setSfx"><span>Sound effects</span></label>
+    </section>
+    <section class="set-group"><h3>Puzzle types for this run</h3>
+      <label class="switch"><input type="checkbox" id="tOne"><span>One-step <small>x + 5 = 12 · 3x = 18 · each room starts with one as a warm-up</small></span></label>
+      <label class="switch"><input type="checkbox" id="tTwo"><span>Two-step <small>3x + 4 = 19 · x/2 − 3 = 5 · 2(x + 1) = 14</small></span></label>
+      <label class="switch"><input type="checkbox" id="tThree"><span>Three-step <small>2(x + 3) − 4 = 10</small></span></label>
+      <label class="switch"><input type="checkbox" id="tBoth"><span>Variables on both sides <small>5x + 2 = 3x + 10</small></span></label>
+      <p class="set-note" id="typeNote" aria-live="polite"></p>
+    </section>
+    <section class="set-group"><h3>Difficulty</h3>
+      <label class="switch"><input type="checkbox" id="setAdaptive"><span>Adaptive <small>Numbers grow after quick, clean solves and get friendlier after a struggle</small></span></label>
+      <div class="seg" id="levelSeg" role="radiogroup" aria-label="Fixed difficulty">
+        <button role="radio" data-l="1">Easy</button><button role="radio" data-l="2">Medium</button><button role="radio" data-l="3">Hard</button><button role="radio" data-l="4">Expert</button>
+      </div>
+    </section>
+    <div class="row"><button class="btn-main" id="setDone">Done</button></div>
+  </div>
+</div>
+
+<!-- Grown-ups -->
+<div class="overlay" id="parent" hidden>
+  <div class="card wide">
+    <div class="sheet-head">
+      <div><div class="k">For grown-ups</div><h2 class="title" style="font-size:30px">Progress report</h2></div>
+      <button class="x-close" id="parentClose" aria-label="Close progress report">×</button>
+    </div>
+    <div id="parentLock" style="display:grid;gap:12px;justify-items:start">
+      <p class="lede" style="font-size:16px">Accuracy, speed and sticking points for each puzzle type, saved on this device.</p>
+      <button class="hold" id="holdBtn"><span class="fill"></span><span class="lbl">Press and hold for 2 seconds to open</span></button>
+    </div>
+    <div id="parentBody" hidden style="display:grid;gap:14px"></div>
+  </div>
+</div>
+
+<!-- Puzzle sheet -->
+<div class="sheet" id="sheet" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <div class="sheet-head">
+      <div><div class="k" id="pKicker"></div><h2 id="pTitle"></h2></div>
+      <button class="x-close" id="pClose" aria-label="Close puzzle">×</button>
+    </div>
+    <div class="story" id="pStory"></div>
+    <div class="eqbox">
+      <div class="eq" id="pEq"></div>
+      <div class="tiles" id="pTiles"></div>
+    </div>
+    <div class="work-wrap"><div class="work" id="pWork" aria-label="Working"></div></div>
+    <div class="feedback" id="pFeedback"></div>
+    <div id="pControls" style="display:grid;gap:10px"></div>
+    <div class="sheet-foot">
+      <button class="btn-soft" id="hintBtn">Ask Louise for a hint</button>
+      <button class="linkish" id="pRecipe">Open recipe card</button>
+    </div>
+  </div>
+</div>
+
+<!-- Victory -->
+<div class="overlay" id="victory" hidden>
+  <div class="card">
+    <div class="k">The attic, back corner</div>
+    <h2 class="title">The Legendary Snack Stash!</h2>
+    <p class="lede">Velma and Louise squeeze through the last mouse hole and find it: a mountain of sunflower seeds, three whole crackers and one perfect blueberry. They share it, obviously. They're sisters.</p>
+    <div class="stats">
+      <div class="stat"><span class="k">Cheese</span><b id="vCheese">0</b></div>
+      <div class="stat"><span class="k">Puzzles</span><b>9</b></div>
+      <div class="stat"><span class="k">In-your-head</span><b id="vHead">0</b></div>
+    </div>
+    <div class="row"><button class="btn-main" id="againBtn">Play again with new numbers</button></div>
+  </div>
+</div>
+<div class="fade" id="fade"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const shuffle = arr => { const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+/* ---------- save ---------- */
+const SAVE_KEY='vl-house-of-x-v1';
+function loadSave(){ try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return s&&typeof s.level==='number'?s:null; }catch(e){ return null; } }
+function writeSave(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify({level:game.level,cheese:game.cheese,head:game.head})); }catch(e){} }
+
+/* ---------- maths formatting ---------- */
+const X='<i>x</i>';
+const F = n => n<0 ? '−'+Math.abs(n) : String(n);
+const P = n => n<0 ? '('+F(n)+')' : F(n);
+const frac = (t,b) => `<span class="frac"><span>${t}</span><span>${b}</span></span>`;
+const cn=(k,h)=>`<span class="cn" data-k="${k}">${h}</span>`;
+const cf = n => n===1 ? '' : String(n);
+const Q='{Q}';
+
+function subHints(n,b){
+  let trick;
+  if(n-b<0||n<0) trick=`Use a number line: start at ${F(n)} and jump ${b} steps to the left. Passing zero is fine!`;
+  else if(b===9) trick=`Mental math trick: to take away 9, take away 10, then add 1 back.`;
+  else if(b>=10) trick=`Mental math trick: take away 10 first, then take away ${b-10} more.`;
+  else trick=`Mental math trick: count back from ${F(n)} by ${b}.`;
+  return [`Do the same thing to the right side: ${F(n)} − ${b}.`, trick];
+}
+function addHints(n,b){
+  let trick;
+  if(n<0) trick=`Use a number line: start at ${F(n)} and jump ${b} steps to the right, toward zero.`;
+  else if(b===9) trick=`Mental math trick: to add 9, add 10, then take 1 away.`;
+  else if(b>=10) trick=`Mental math trick: add 10 first, then add ${b-10} more.`;
+  else trick=`Mental math trick: count up from ${F(n)} by ${b}.`;
+  return [`Do the same thing to the right side: ${F(n)} + ${b}.`, trick];
+}
+function divHints(n,a){
+  const skip=[1,2,3,4,5].map(k=>a*k).join(', ');
+  return [`Do the same thing to the right side: ${F(n)} ÷ ${a}.`,
+    `Think: ${a} × what = ${F(Math.abs(n))}? Skip-count by ${a}s: ${skip}…`+(n<0?` Then remember: a negative divided by a positive is negative.`:'')];
+}
+function mulHints(n,a){
+  let trick = a===2?`Times 2 is just doubling.`: a===4?`Times 4 is double, then double again.`: a===5?`Times 5 is times 10, then cut it in half.`:`Add ${F(n)} to itself ${a} times.`;
+  if(n<0) trick+=` A negative times a positive stays negative.`;
+  return [`Do the same thing to the right side: ${F(n)} × ${a}.`, trick];
+}
+const byOrder = `Undo things in reverse order, like taking off your shoes before your socks. The last thing done gets undone first.`;
+const mAdd = b => `+ ${b} and − ${b} cancel out: together they make 0. The right side gets − ${b} too, so the seesaw stays balanced.`;
+const mSub = b => `− ${b} and + ${b} cancel out: together they make 0. The right side gets + ${b} too, so the seesaw stays balanced.`;
+const mMul = a => `${a} ÷ ${a} = 1, so the ${a} cancels and leaves just ${X}. The right side gets ÷ ${a} too.`;
+const mDiv = a => `Dividing by ${a} and then multiplying by ${a} cancel out, leaving just ${X}. The right side gets × ${a} too.`;
+const mBr = a => `${a} ÷ ${a} = 1, so the ${a} outside the brackets cancels and the brackets can go. The right side gets ÷ ${a} too.`;
+
+/* Step factories. rv = the right-hand value before this step. */
+function sAdd(b,rv,alt,why,prompt){ return {prompt, ans:rv-b, numHints:subHints(rv,b), opHints:[why,byOrder],
+  ops:[{label:`Subtract ${b} from both sides`,ok:true},{label:`Add ${b} to both sides`,fb:`Adding ${b} more just piles on extra! To undo “+ ${b}”, do the opposite: subtract ${b}.`},alt]}; }
+function sSub(b,rv,alt,why,prompt){ return {prompt, ans:rv+b, numHints:addHints(rv,b), opHints:[why,byOrder],
+  ops:[{label:`Add ${b} to both sides`,ok:true},{label:`Subtract ${b} from both sides`,fb:`That takes away even more! The opposite of “− ${b}” is “+ ${b}”.`},alt]}; }
+function sMul(a,rv,alt,why,prompt){ return {prompt, ans:rv/a, numHints:divHints(rv,a), opHints:[why,`The opposite of multiplying by ${a} is dividing by ${a}.`],
+  ops:[{label:`Divide both sides by ${a}`,ok:true},{label:`Multiply both sides by ${a}`,fb:`${X} is already being multiplied by ${a}. Multiplying again makes it bigger. The opposite of × is ÷.`},alt]}; }
+function sDiv(a,rv,alt,why,prompt){ return {prompt, ans:rv*a, numHints:mulHints(rv,a), opHints:[why,`The opposite of dividing by ${a} is multiplying by ${a}.`],
+  ops:[{label:`Multiply both sides by ${a}`,ok:true},{label:`Divide both sides by ${a}`,fb:`${X} is already being divided by ${a}. Dividing again makes it even smaller. The opposite of ÷ is ×.`},alt]}; }
+
+/* Difficulty levels */
+const LV=[null,
+  {a:[2,3],x:[1,6], b:[1,6], neg:0},
+  {a:[2,5],x:[2,10],b:[1,9], neg:0},
+  {a:[2,6],x:[2,12],b:[2,15],neg:.25},
+  {a:[2,9],x:[2,12],b:[3,20],neg:.45}];
+const LEVEL_NAMES=['','Easy','Medium','Hard','Expert'];
+const CATS={one:['p1','m1','t1','d1'],two:['axpb','axmb','xdpb','xdmb','apar'],three:['apd','apm'],both:['vb']};
+const CAT_OF={}; Object.keys(CATS).forEach(k=>CATS[k].forEach(t=>CAT_OF[t]=k));
+const CAT_NAMES={one:'One-step',two:'Two-step',three:'Three-step',both:'Variables on both sides'};
+const rr = r => rnd(r[0],r[1]);
+function rx(R,force){ let x=rr(R.x); if(force||Math.random()<R.neg) x=-rnd(1,Math.max(3,R.x[1]-2)); return x; }
+
+function genProblem(type,lvl,force){
+  const R=LV[lvl]; let a,b,c,d,x,e,k,q,eq,steps,L,check;
+  switch(type){
+  case 'p1': x=rx(R,force); b=rr(R.b); c=x+b;
+    eq=`${X} + ${b} = ${F(c)}`;
+    steps=[sAdd(b,c,{label:`Divide both sides by ${b}`,fb:`The ${b} is added to ${X}, not multiplying it. What undoes adding?`},`${b} was added to ${X}. What undoes adding?`,`What should we undo to get ${X} alone?`)];
+    L={start:{A:X,B:cn('s0',`+ ${b}`),D:F(c)},ops:[{B:cn('s0',`− ${b}`),D:`− ${b}`,msg:mAdd(b)}],res:[{A:X,D:Q}]};
+    check=`${P(x)} + ${b} = ${F(c)}`; break;
+  case 'm1': x=rx(R,force); b= lvl<3&&x>0 ? rnd(R.b[0],Math.max(R.b[0],Math.min(R.b[1],x))) : rr(R.b); c=x-b;
+    eq=`${X} − ${b} = ${F(c)}`;
+    steps=[sSub(b,c,{label:`Multiply both sides by ${b}`,fb:`The ${b} is taken away from ${X}, not dividing it. What undoes subtracting?`},`${b} was taken away from ${X}. What undoes taking away?`,`What should we undo to get ${X} alone?`)];
+    L={start:{A:X,B:cn('s0',`− ${b}`),D:F(c)},ops:[{B:cn('s0',`+ ${b}`),D:`+ ${b}`,msg:mSub(b)}],res:[{A:X,D:Q}]};
+    check=`${P(x)} − ${b} = ${F(c)}`; break;
+  case 't1': a=rr(R.a); x=rx(R,force); c=a*x;
+    eq=`${a}${X} = ${F(c)}`;
+    steps=[sMul(a,c,{label:`Subtract ${a} from both sides`,fb:`${a}${X} means ${a} times ${X}, not ${a} plus ${X}. What undoes multiplying?`},`${a}${X} means ${a} × ${X}. What undoes multiplying?`,`What should we undo to get ${X} alone?`)];
+    L={start:{A:cn('s0',String(a))+X,D:F(c)},ops:[{A:cn('s0',`÷ ${a}`),D:`÷ ${a}`,msg:mMul(a)}],res:[{A:X,D:Q}]};
+    check=`${a} × ${P(x)} = ${F(c)}`; break;
+  case 'd1': a=rr(R.a); q=rx(R,force); x=a*q; c=q;
+    eq=`${frac(X,a)} = ${F(q)}`;
+    steps=[sDiv(a,q,{label:`Subtract ${a} from both sides`,fb:`${X} is being divided by ${a}, not having ${a} added. What undoes dividing?`},`${X} was shared into ${a} equal piles. We want the whole pile back.`,`What should we undo to get ${X} alone?`)];
+    L={start:{A:frac(X,cn('s0',String(a))),D:F(q)},ops:[{A:cn('s0',`× ${a}`),D:`× ${a}`,msg:mDiv(a)}],res:[{A:X,D:Q}]};
+    check=`${P(x)} ÷ ${a} = ${F(q)}`; break;
+  case 'axpb': a=rr(R.a); x=rx(R,force); b=rr(R.b); c=a*x+b;
+    eq=`${a}${X} + ${b} = ${F(c)}`;
+    steps=[sAdd(b,c,{label:`Divide both sides by ${a}`,fb:`That's allowed, but it chops the ${b} into fractions. Rats like whole crumbs: undo the + ${b} first.`},`${X} was multiplied by ${a}, and then ${b} was added.`,`Step 1: What should we undo first?`),
+           sMul(a,c-b,{label:`Subtract ${a} from both sides`,fb:`The ${a} is stuck to ${X} by multiplying, not adding. What undoes multiplying?`},`${a}${X} means ${a} groups of ${X}. We want just one.`,`Step 2: ${X} is being multiplied by ${a}. How do we undo that?`)];
+    L={start:{A:`${a}${X}`,B:cn('s0',`+ ${b}`),D:F(c)},ops:[{B:cn('s0',`− ${b}`),D:`− ${b}`,msg:mAdd(b)},{A:cn('s1',`÷ ${a}`),D:`÷ ${a}`,msg:mMul(a)}],res:[{A:cn('s1',String(a))+X,D:Q},{A:X,D:Q}]};
+    check=`${a} × ${P(x)} + ${b} = ${F(c)}`; break;
+  case 'axmb': a=rr(R.a); x=rx(R,force); b= lvl<3&&a*x>R.b[0] ? rnd(R.b[0],Math.min(R.b[1],a*x-1)) : rr(R.b); c=a*x-b;
+    eq=`${a}${X} − ${b} = ${F(c)}`;
+    steps=[sSub(b,c,{label:`Divide both sides by ${a}`,fb:`Allowed, but messy: it turns the ${b} into a fraction. Undo the − ${b} first.`},`${X} was multiplied by ${a}, and then ${b} was taken away.`,`Step 1: What should we undo first?`),
+           sMul(a,c+b,{label:`Add ${a} to both sides`,fb:`The ${a} is attached by multiplying, not subtracting. What undoes multiplying?`},`${a}${X} means ${a} groups of ${X}. We want just one.`,`Step 2: ${X} is being multiplied by ${a}. How do we undo that?`)];
+    L={start:{A:`${a}${X}`,B:cn('s0',`− ${b}`),D:F(c)},ops:[{B:cn('s0',`+ ${b}`),D:`+ ${b}`,msg:mSub(b)},{A:cn('s1',`÷ ${a}`),D:`÷ ${a}`,msg:mMul(a)}],res:[{A:cn('s1',String(a))+X,D:Q},{A:X,D:Q}]};
+    check=`${a} × ${P(x)} − ${b} = ${F(c)}`; break;
+  case 'xdpb': case 'xdmb': { const plus=type==='xdpb', sg=plus?'+':'−', inv=plus?'−':'+';
+    a=rr(R.a); q=rx(R,force); x=a*q; b= !plus&&lvl<3&&q>R.b[0] ? rnd(R.b[0],Math.min(R.b[1],q-1)) : rr(R.b); c= plus?q+b:q-b;
+    eq=`${frac(X,a)} ${sg} ${b} = ${F(c)}`;
+    const alt={label:`Multiply both sides by ${a}`,fb:`Allowed, but then you'd have to multiply the ${b} too. Extra work! Undo the ${sg} ${b} first.`};
+    steps=[ plus? sAdd(b,c,alt,`${X} was divided by ${a}, and then ${b} was added.`,`Step 1: What should we undo first?`) : sSub(b,c,alt,`${X} was divided by ${a}, and then ${b} was taken away.`,`Step 1: What should we undo first?`),
+            sDiv(a,q,{label:`Add ${a} to both sides`,fb:`The ${a} is dividing ${X}, not subtracting from it. What undoes dividing?`},`${frac(X,a)} means ${X} was shared into ${a} equal piles.`,`Step 2: ${X} is being divided by ${a}. How do we undo that?`)];
+    L={start:{A:frac(X,a),B:cn('s0',`${sg} ${b}`),D:F(c)},ops:[{B:cn('s0',`${inv} ${b}`),D:`${inv} ${b}`,msg:plus?mAdd(b):mSub(b)},{A:cn('s1',`× ${a}`),D:`× ${a}`,msg:mDiv(a)}],res:[{A:frac(X,cn('s1',String(a))),D:Q},{A:X,D:Q}]};
+    check=`${P(x)} ÷ ${a} ${sg} ${b} = ${F(c)}`; break; }
+  case 'apar': a=rnd(2,Math.min(5,R.a[1])); x=rx(R,force); b=rnd(1,Math.min(8,R.b[1])); c=a*(x+b);
+    eq=`${a}(${X} + ${b}) = ${F(c)}`;
+    steps=[sMul(a,c,{label:`Subtract ${b} from both sides`,fb:`The ${b} is inside the brackets, hugging ${X}. The ${a} outside multiplies the whole bracket, so undo that first.`},`The ${a} outside the brackets multiplies everything inside.`,`Step 1: Brackets! What should we undo first?`),
+           sAdd(b,x+b,{label:`Divide both sides by ${b}`,fb:`The ${b} is added to ${X}, not multiplying it. What undoes adding?`},`${b} was added to ${X}.`,`Step 2: Now it's ${X} + ${b}. How do we get ${X} alone?`)];
+    L={start:{A:cn('s0',String(a))+`(${X}`,B:`+ ${b})`,D:F(c)},ops:[{A:cn('s0',`÷ ${a}`),D:`÷ ${a}`,msg:mBr(a)},{B:cn('s1',`− ${b}`),D:`− ${b}`,msg:mAdd(b)}],res:[{A:X,B:cn('s1',`+ ${b}`),D:Q},{A:X,D:Q}]};
+    check=`${a} × (${F(x)} + ${b}) = ${F(c)}`; break;
+  case 'apd': case 'apm': { const plus=type==='apd', sg=plus?'+':'−', inv=plus?'−':'+';
+    a=rnd(2,Math.min(5,R.a[1])); x=rx(R,force); b=rnd(1,Math.min(8,R.b[1])); d=rr(R.b); const inner=x+b, mid=a*inner; c= plus? mid+d : mid-d;
+    eq=`${a}(${X} + ${b}) ${sg} ${d} = ${F(c)}`;
+    const lock={label:`Subtract ${b} from both sides`,fb:`The ${b} is locked inside the brackets. Work from the outside in: the ${sg} ${d} was the last thing done.`};
+    steps=[ plus? sAdd(d,c,lock,`Work from the outside in. The ${sg} ${d} sits outside everything else.`,`Step 1: Three steps this time! What should we undo first?`)
+                : sSub(d,c,lock,`Work from the outside in. The ${sg} ${d} sits outside everything else.`,`Step 1: Three steps this time! What should we undo first?`),
+            sMul(a,mid,{label:`Subtract ${b} from both sides`,fb:`The ${b} is still inside the brackets. Free the bracket first by undoing the × ${a} outside.`},`The ${a} outside the brackets multiplies the whole bracket.`,`Step 2: The ${a} multiplies the whole bracket. How do we undo that?`),
+            sAdd(b,inner,{label:`Divide both sides by ${b}`,fb:`The ${b} is added to ${X}, not multiplying it. What undoes adding?`},`${b} was added to ${X}.`,`Step 3: Last one! How do we get ${X} alone?`)];
+    L={start:{A:`${a}(${X}`,B:`+ ${b})`,C:cn('s0',`${sg} ${d}`),D:F(c)},
+       ops:[{C:cn('s0',`${inv} ${d}`),D:`${inv} ${d}`,msg:plus?mAdd(d):mSub(d)},{A:cn('s1',`÷ ${a}`),D:`÷ ${a}`,msg:mBr(a)},{B:cn('s2',`− ${b}`),D:`− ${b}`,msg:mAdd(b)}],
+       res:[{A:cn('s1',String(a))+`(${X}`,B:`+ ${b})`,D:Q},{A:X,B:cn('s2',`+ ${b}`),D:Q},{A:X,D:Q}]};
+    check=`${a} × (${F(x)} + ${b}) ${sg} ${d} = ${F(c)}`; break; }
+  case 'vb': { e=rnd(1,Math.max(1,R.a[1]-3)); k=rnd(2,Math.max(2,Math.min(5,R.a[1]-1))); a=e+k; x=rx(R,force); b=rr(R.b); d=k*x+b;
+    if(d<=0){ x=Math.abs(x); d=k*x+b; }
+    const ex=`${cf(e)}${X}`;
+    eq=`${a}${X} + ${b} = ${ex} + ${d}`;
+    steps=[{prompt:`Step 1: There are ${X}'s on both sides! What should we do first?`, ans:k, coef:true,
+             ops:[{label:`Subtract ${ex} from both sides`,ok:true},{label:`Add ${ex} to both sides`,fb:`That piles even more ${X}'s on the left and leaves ${X}'s on the right. To clear the right side, subtract ${ex}.`},{label:`Subtract ${b} from both sides`,fb:`That would work too! But let's gather all the ${X}'s on one side first. It keeps things tidy.`}],
+             opHints:[`Gather all the ${X}'s on one side. The right side has the smaller group: ${ex}.`,`Take ${ex} away from both sides, so the ${X}'s on the right cancel out.`],
+             numHints:[`On the left: ${a}${X} − ${ex}. How many ${X}'s are left?`,`Think of each ${X} as a bag of seeds: ${a} bags take away ${e} bag${e>1?'s':''} leaves how many bags?`]},
+           sAdd(b,d,{label:`Divide both sides by ${k}`,fb:`Allowed, but it chops the ${b} into fractions. Undo the + ${b} first.`},`${X} was multiplied by ${k}, and then ${b} was added.`,`Step 2: Now the ${X}'s are all on the left. What should we undo next?`),
+           sMul(k,d-b,{label:`Subtract ${k} from both sides`,fb:`The ${k} is stuck to ${X} by multiplying, not adding. What undoes multiplying?`},`${k}${X} means ${k} × ${X}.`,`Step 3: Last step! How do we undo × ${k}?`)];
+    L={start:{A:`${a}${X}`,B:`+ ${b}`,D:cn('s0',ex),E:`+ ${d}`},
+       ops:[{A:`− ${ex}`,D:cn('s0',`− ${ex}`),msg:`${ex} − ${ex} = 0, so the ${X}'s on the right cancel out. On the left, ${a}${X} − ${ex} leaves fewer ${X}'s. How many? Fill in the box.`},
+            {B:cn('s1',`− ${b}`),D:`− ${b}`,msg:mAdd(b)},{A:cn('s2',`÷ ${k}`),D:`÷ ${k}`,msg:mMul(k)}],
+       res:[{A:`${Q}${X}`,B:cn('s1',`+ ${b}`),D:F(d)},{A:cn('s2',String(k))+X,D:Q},{A:X,D:Q}]};
+    const val=a*x+b;
+    check=`left: ${a} × ${P(x)} + ${b} = ${F(val)} · right: ${e} × ${P(x)} + ${d} = ${F(val)}`;
+    c=d; break; }
+  }
+  return {type,cat:CAT_OF[type],lvl,a,b,c,x,eq,steps,L,check};
+}
+function makeProblem(type,lvl,force){
+  for(let i=0;i<60;i++){
+    const p=genProblem(type,lvl,force);
+    const neg = p.x<0 || p.c<0 || p.steps.some(s=>s.ans<0);
+    if(lvl<3 && !force && neg && i<59) continue;
+    if(p.steps.every(s=>Number.isInteger(s.ans)) && p.steps[p.steps.length-1].ans===p.x) return p;
+  }
+  return genProblem('axpb',1,false);
+}
+const plainEq = html => html.replace(/<span class="frac"><span>(.*?)<\/span><span>(.*?)<\/span><\/span>/g,'$1/$2').replace(/<[^>]+>/g,'');
+
+/* ---------- vertical working ---------- */
+function workRow(lab,r,eqSign,cls){
+  const k=cls?` ${cls}`:'', w=$('pWork'), c=v=>v||'';
+  w.insertAdjacentHTML('beforeend',`<span class="lab">${lab}</span><span class="cA${k}">${c(r.A)}</span><span class="cB${k}">${c(r.B)}</span><span class="cB${k}">${c(r.C)}</span><span class="cE">${eqSign||''}</span><span class="cD${k}">${c(r.D)}</span><span class="cB${k}">${c(r.E)}</span>`);
+}
+function workRule(){ $('pWork').insertAdjacentHTML('beforeend','<span class="lab" style="min-height:0"></span><span class="rule"></span>'); }
+function workStart(){ $('pWork').innerHTML=''; workRow('Start',cur.d.L.start,'='); }
+function wrapOp(h){ return h?`<span class="opr">${h}</span>`:''; }
+function workOp(i){
+  const L=cur.d.L, o=L.ops[i], r=L.res[i];
+  workRow(`Step ${i+1}`,{A:wrapOp(o.A),B:wrapOp(o.B),C:wrapOp(o.C),D:wrapOp(o.D),E:wrapOp(o.E)},'');
+  setTimeout(()=>{ $('pWork').querySelectorAll(`.cn[data-k="s${i}"]`).forEach(el=>el.classList.add('x')); sfx('slash'); },200);
+  workRule();
+  const fill=v=>v?v.replace(Q,`<span class="q" id="q${i}">?</span>`):v;
+  workRow('',{A:fill(r.A),B:fill(r.B),C:fill(r.C),D:fill(r.D),E:fill(r.E)},'=');
+}
+function workFill(i,v){ const q=$('q'+i); if(q){ q.textContent=F(v); q.classList.add('filled'); } }
+function resEq(i,v){ const r=cur.d.L.res[i], f=h=>h?h.replace(Q,F(v)):''; return `${[f(r.A),f(r.B),f(r.C)].filter(Boolean).join(' ')} = ${[f(r.D),f(r.E)].filter(Boolean).join(' ')}`; }
+
+/* ---------- rooms ---------- */
+const JOKES=[
+  ['v','Why did the rat bring a ladder to math class? To reach the higher numbers!'],
+  ['l','I found a Cheerio. I am wearing it as a crown now.'],
+  ['v','What do you call a rat who solves equations? A mathe-RAT-ician!'],
+  ['l','Fun fact: x is just a snack hiding in a box. Algebra is how we find out how big the box is.'],
+  ['v','A raisin! Wait. That is a raisin, right? …Right?'],
+  ['l','Why are rats great at algebra? We are experts at finding hidden things.'],
+  ['v','Found a button. Not a snack. Keeping it anyway.'],
+  ['l','What did the 0 say to the 8? Nice belt!'],
+  ['v','This crumb tastes like toast, adventure, and a little bit of carpet.'],
+  ['l','How do rats check their answers? Plug x back in and squeak “yep!”'],
+  ['v','Louise, I think this crumb is older than us.'],
+  ['l','Variables are like cheese in a lunchbox. You know it is in there. You just do not know how much.'],
+  ['v','Why was the equals sign so humble? It knew it was not less than or greater than anyone.'],
+  ['l','I am not saying I am the best at math. I am saying math has never beaten me in a sniff-off.'],
+  ['v','Seven ate nine? Rude. I would have shared.'],
+];
+const PRAISE=['Squeak-tacular!','You are the big cheese!','Rat-tastic work!','Whisker-licking good!','Tail-wiggling perfect!','Absolutely gnaw-some!'];
+
+const ROOMS=[
+  { name:'The Kitchen', short:'kitchen',
+    intro:[['v','We made it to the kitchen. I can smell toast crumbs from here.'],['l','Glowing rings mean puzzles. Solve all three and the mouse hole opens!']],
+    start:[0,5], door:-4.5,
+    crumbs:[[-3,4],[4,6.2],[-6.5,0],[9.5,-1],[1,1.5]],
+    puzzles:[
+      {id:'jar', name:'The cookie jar scale', at:[6.5,-2.5], pref:'axpb',
+        story:p=> p.type==='axpb'&&p.x>0
+          ? [['v',`The cookie jar is sitting on the kitchen scale! Inside are ${p.a} bags of sunflower seeds that each weigh ${X} grams, plus a ${p.b} gram cracker.`],['l',`The scale says ${p.c} grams. If we find ${X}, we know how heavy one bag of seeds is!`]]
+          : [['v','The cookie jar is on the kitchen scale, and the scale is showing an equation instead of a number.'],['l','Solve it and the lid pops off. Cookie crumbs, here we come.']]},
+      {id:'fridge', name:'The fridge magnets', at:[-8.8,-4.2], pref:'axpb',
+        story:p=>[['l',`Somebody spelled out an equation in fridge magnets. The sticky note says “Solve me and the yogurt is yours.”`],['v','Yogurt. YOGURT. Louise, we are doing this.']]},
+      {id:'toast', name:'The crumby toaster', at:[7.5,4], pref:'axmb',
+        story:p=> p.type==='axmb'&&p.x>0&&p.c>0
+          ? [['v',`The toaster made ${p.a} slices of toast with ${X} crumbs on each slice. Then Louise ate ${p.b} crumbs.`],['l',`Allegedly ate. Anyway, now there are ${p.c} crumbs left. How many crumbs were on each slice?`]]
+          : [['v','The toaster dial is stuck on a mystery setting called x.'],['l','Solve the equation and the toast pops. Probably with crumbs. Hopefully with crumbs.']]},
+    ]},
+  { name:'The Living Room', short:'living room',
+    intro:[['l','The living room! Careful: Sir Whiskerton naps on the rug.'],['v','Big cat. Big snore. Let us tiptoe.']],
+    start:[0,6], door:-4.5,
+    crumbs:[[-8,6],[9,5],[3.5,-3.5],[-3,-1],[6,2]],
+    puzzles:[
+      {id:'basket', name:'The sock basket', at:[-6,4], pref:'xdpb',
+        story:p=> p.type==='xdpb'&&p.x>0
+          ? [['l',`A pile of ${X} socks got shared equally between ${p.a} drawers. One drawer's socks, plus the ${p.b} socks hiding under the couch, makes ${p.c}.`],['v','Socks make the coziest nests. How many socks were in the whole pile?']]
+          : [['l','The sock basket has a laundry tag with an equation on it.'],['v','Solve it and we can build a sock nest. The best kind of nest.']]},
+      {id:'piano', name:'The piano note', at:[8,-4.5], pref:'axmb',
+        story:p=>[['v','There is a note taped to the piano: “Play key number x.”'],['l','There is an equation underneath. Solve it and we can play a song. Velma will dance.'],['v','I will NOT dance. …I might dance.']]},
+      {id:'cat', name:'Sir Whiskerton’s collar tag', at:[0.5,2.6], pref:'xdmb',
+        story:p=>[['l','(whispering) His collar tag has a riddle engraved on it.'],['v','(whispering) If we solve it quietly, we can sneak past. No squeaking. Not even a little squeak.']]},
+    ]},
+  { name:'The Attic', short:'attic',
+    intro:[['v','The attic! Dusty, creaky, and full of treasure.'],['l','It is chilly up here. Watch out for numbers below zero.']],
+    start:[0,5.5], door:-1.5,
+    crumbs:[[-9,5],[9.5,6],[2,-2],[-3,2],[8.5,-1]],
+    puzzles:[
+      {id:'trunk', name:'Grandma’s old trunk', at:[-6,-3.9], pref:'apar',
+        story:p=>[['v','An old trunk with a number lock! The lock has an equation engraved on it.'],['l','If it has brackets, remember: the numbers inside stick together. Like us.']]},
+      {id:'thermo', name:'The chilly thermometer', at:[5,-6.4], pref:'axpb', forceNeg:true,
+        story:p=>[['l','Brrr. This thermometer is so old it shows the temperature as an equation.'],['v',`${X} is the temperature in °C. It is below zero up here, so watch for negative numbers!`]]},
+      {id:'music', name:'The music box', at:[6,4], pref:'xdmb',
+        story:p=>[['v',`A music box! It will only play if you find the magic number ${X}.`],['l','Someone scratched an equation into the bottom. Let us solve it.']]},
+    ]},
+];
+
+/* ---------- three.js setup ---------- */
+const W=22, D=16;
+const canvas=$('game');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,1,0.1,200);
+const hemi=new THREE.HemisphereLight(0xfff0d4,0x6b4a3a,0.8); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffe0b0,0.85);
+sun.position.set(8,18,10); sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera,{left:-15,right:15,top:15,bottom:-15,near:1,far:50}); sun.shadow.bias=-0.0008;
+scene.add(sun);
+const room=new THREE.Group(); scene.add(room);
+
+function mat(color,opts){ return new THREE.MeshStandardMaterial(Object.assign({color,roughness:0.85,metalness:0},opts||{})); }
+function mesh(geo,m,{cast=true,recv=true}={}){ const o=new THREE.Mesh(geo,m); o.castShadow=cast; o.receiveShadow=recv; return o; }
+let cols=[];
+function addCol(x,z,w,d){ cols.push({x,z,w,d}); }
+function box(w,h,d,x,y,z,color,{collide=true,parent=room,opts}={}){
+  const o=mesh(new THREE.BoxGeometry(w,h,d),mat(color,opts)); o.position.set(x,y+h/2,z); parent.add(o);
+  if(collide) addCol(x,z,w,d); return o;
+}
+function tex(draw,size=512,rep=[1,1]){
+  const c=document.createElement('canvas'); c.width=c.height=size; draw(c.getContext('2d'),size);
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rep[0],rep[1]); t.encoding=THREE.sRGBEncoding; return t;
+}
+function planks(base,alt,line,rep){
+  return tex((g,s)=>{ g.fillStyle=base; g.fillRect(0,0,s,s); const n=8, h=s/n;
+    for(let i=0;i<n;i++){ g.fillStyle=i%2?alt:base; g.fillRect(0,i*h,s,h); g.fillStyle=line; g.fillRect(0,i*h,s,2);
+      const off=(i*137)%s; g.fillRect(off,i*h,2,h); g.fillRect((off+s/2)%s,i*h,2,h); }
+  },512,rep);
+}
+function wallpaper(bg,stripe,dot){
+  return tex((g,s)=>{ g.fillStyle=bg; g.fillRect(0,0,s,s); g.fillStyle=stripe; for(let x=0;x<s;x+=64) g.fillRect(x,0,18,s);
+    g.fillStyle=dot; for(let y=24;y<s;y+=64) for(let x=41;x<s;x+=64){ g.beginPath(); g.arc(x,y,5,0,7); g.fill(); }
+  },512,[4,2]);
+}
+
+function shell(r){
+  const floorT = r===0? planks('#c98f57','#c48a50','#8d5b31',[3,2]) : r===1? planks('#a8673f','#a16139','#6e3f22',[3,2]) : planks('#8b6b4a','#846445','#5a432c',[3,2]);
+  const wallT = r===0? wallpaper('#a9c7a8','#9dbd9c','#f3e4c4') : r===1? wallpaper('#e8b9a4','#e2ae98','#fff2dc') : planks('#7a5a3c','#735538','#4f3a26',[2,1]);
+  const floor=mesh(new THREE.PlaneGeometry(W,D),new THREE.MeshStandardMaterial({map:floorT,roughness:0.9}),{cast:false});
+  floor.rotation.x=-Math.PI/2; floor.name='floor'; room.add(floor);
+  const wm=new THREE.MeshStandardMaterial({map:wallT,roughness:0.95});
+  const back=mesh(new THREE.PlaneGeometry(W,9),wm,{cast:false}); back.position.set(0,4.5,-D/2); room.add(back);
+  const left=mesh(new THREE.PlaneGeometry(D,9),wm,{cast:false}); left.rotation.y=Math.PI/2; left.position.set(-W/2,4.5,0); room.add(left);
+  const trim= r===2?0x4a3424:0xf4e6cc;
+  box(W,0.5,0.15,0,0,-D/2+0.07,trim,{collide:false}); box(0.15,0.5,D,-W/2+0.07,0,0,trim,{collide:false});
+  return floor;
+}
+
+/* mouse hole */
+let door=null;
+function makeDoor(x){
+  const g=new THREE.Group();
+  const hole=new THREE.Mesh(new THREE.CircleGeometry(1.0,32,0,Math.PI),new THREE.MeshBasicMaterial({color:0x1a1118}));
+  hole.position.set(0,0,0.02); g.add(hole);
+  const rim=mesh(new THREE.TorusGeometry(1.05,0.12,8,24,Math.PI),mat(0x5a3d2b)); g.add(rim);
+  const glow=new THREE.Mesh(new THREE.CircleGeometry(0.85,32,0,Math.PI),new THREE.MeshBasicMaterial({color:0xffc861,transparent:true,opacity:0}));
+  glow.position.z=0.03; g.add(glow);
+  g.position.set(x,0,-D/2+0.02); room.add(g);
+  const light=new THREE.PointLight(0xffb84d,0,6); light.position.set(x,1,-D/2+1); room.add(light);
+  door={x,z:-D/2+0.9,glow,light,open:false};
+}
+
+/* rats — sculpted from Velma & Louise's photos */
+function furTextures(){
+  const c=document.createElement('canvas'); c.width=c.height=512; const g=c.getContext('2d');
+  g.fillStyle='#e4e0dc'; g.fillRect(0,0,512,512);
+  for(let i=0;i<9000;i++){
+    const x=Math.random()*512, y=Math.random()*512, len=6+Math.random()*14, lean=(Math.random()-0.5)*3;
+    const light=Math.random()<0.45;
+    g.strokeStyle= light?`rgba(255,248,240,${0.18+Math.random()*0.3})`:`rgba(20,10,5,${0.12+Math.random()*0.22})`;
+    g.lineWidth=0.8+Math.random()*1.4; g.beginPath(); g.moveTo(x,y); g.lineTo(x+lean,y+len); g.stroke();
+  }
+  const mk=()=>{ const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(5,2); return t; };
+  const map=mk(); map.encoding=THREE.sRGBEncoding; return {map,bump:mk()};
+}
+function tailTexture(){
+  const c=document.createElement('canvas'); c.width=64; c.height=512; const g=c.getContext('2d');
+  g.fillStyle='#ffffff'; g.fillRect(0,0,64,512);
+  for(let y=0;y<512;y+=7){ g.fillStyle='rgba(90,50,40,0.35)'; g.fillRect(0,y,64,1.5);
+    for(let x=0;x<64;x+=8){ g.fillStyle='rgba(90,50,40,0.18)'; g.fillRect(x+((y/7)%2)*4,y,1,7); } }
+  g.fillStyle='rgba(70,40,30,0.35)'; g.fillRect(0,0,24,512); // darker top stripe
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(1,6); t.encoding=THREE.sRGBEncoding; return t;
+}
+const FUR=furTextures(), TAILTEX=tailTexture();
+const KEYS=[[0,0,.40],[.05,.27,.40],[.17,.43,.42],[.40,.45,.43],[.57,.37,.44],[.67,.29,.47],[.76,.275,.49],[.86,.205,.47],[.95,.11,.44],[.985,.05,.43],[1,0,.43]];
+function profile(t){
+  for(let i=1;i<KEYS.length;i++) if(t<=KEYS[i][0]){ const a=KEYS[i-1], b=KEYS[i]; let u=(t-a[0])/(b[0]-a[0]); u=u*u*(3-2*u); return [a[1]+(b[1]-a[1])*u, a[2]+(b[2]-a[2])*u]; }
+  return [0,.43];
+}
+function makeRat(isLouise){
+  const g=new THREE.Group(), body=new THREE.Group(); g.add(body);
+  const base=new THREE.Color(isLouise?0x4a3329:0x3d271f), dark=base.clone().multiplyScalar(0.62);
+  const fawn=new THREE.Color(0x9a7563), white=new THREE.Color(0xf3ece4), pinkN=new THREE.Color(0xd9989a);
+  const geo=new THREE.SphereGeometry(1,56,40); const pos=geo.attributes.position; const cols=new Float32Array(pos.count*3); const col=new THREE.Color();
+  for(let i=0;i<pos.count;i++){
+    const s=pos.getY(i), rx=pos.getX(i), rz=pos.getZ(i); const m=Math.hypot(rx,rz)||1;
+    const dx=rx/m, dy=-rz/m; const ring=Math.sqrt(Math.max(0,1-s*s));
+    const t=(s+1)/2; const [R,cy]=profile(t);
+    const yScale = dy>0?0.88:0.72;
+    pos.setXYZ(i, dx*R*ring/Math.max(ring,1e-6)*Math.min(1,ring*8)*1.05, cy+dy*R*Math.min(1,ring*8)*yScale, -0.95+t*2.0);
+    // colour
+    col.copy(base);
+    if(dy>0.25) col.lerp(dark,(dy-0.25)*0.9);
+    const ang=Math.atan2(dx,-dy);
+    if(isLouise){
+      const edge=-0.18+0.12*Math.sin(t*26)+0.07*Math.sin(ang*6);
+      if(t>0.16&&t<0.7&&dy<edge) col.copy(white); else if(t>0.16&&t<0.7&&dy<edge+0.08) col.lerp(white,0.5);
+    } else {
+      if(t>0.3&&t<0.66&&dy<-0.72+0.06*Math.sin(t*30)) col.copy(white);
+    }
+    if(t>0.84){ const k=Math.min(1,(t-0.84)/0.1); col.lerp(fawn,k*(dy<0.3?0.85:0.45)); }
+    if(t>0.975) col.lerp(pinkN,Math.min(1,(t-0.975)/0.02));
+    cols[i*3]=col.r; cols[i*3+1]=col.g; cols[i*3+2]=col.b;
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(cols,3)); geo.computeVertexNormals();
+  const furMat=new THREE.MeshStandardMaterial({vertexColors:true,map:FUR.map,bumpMap:FUR.bump,bumpScale:0.025,roughness:0.78});
+  body.add(mesh(geo,furMat));
+  // ears: big, cupped, pink-beige
+  const earOut=new THREE.MeshStandardMaterial({color:0xd8a39b,roughness:0.55,side:THREE.DoubleSide,emissive:0x3a1512,emissiveIntensity:0.35});
+  const earIn=new THREE.MeshStandardMaterial({color:0xc98a86,roughness:0.6,side:THREE.DoubleSide});
+  [-1,1].forEach(s=>{
+    const ear=new THREE.Group();
+    const cup=mesh(new THREE.SphereGeometry(0.2,20,14,0,Math.PI*2,0,Math.PI*0.55),earOut); cup.scale.set(1,1.15,0.45); ear.add(cup);
+    const inner=mesh(new THREE.SphereGeometry(0.17,18,12,0,Math.PI*2,0,Math.PI*0.5),earIn,{cast:false}); inner.scale.set(1,1.12,0.38); inner.position.z=0.015; ear.add(inner);
+    ear.rotation.set(-Math.PI/2+0.35,0,0); ear.rotateOnWorldAxis(new THREE.Vector3(0,1,0),-0.55*s); ear.rotateOnWorldAxis(new THREE.Vector3(0,0,1),-0.45*s);
+    ear.position.set(0.19*s,0.73,0.43); body.add(ear);
+    // eye
+    const eye=mesh(new THREE.SphereGeometry(0.058,16,12),new THREE.MeshStandardMaterial({color:0x070405,roughness:0.06,metalness:0.1})); eye.position.set(0.172*s,0.585,0.70); body.add(eye);
+    const shine=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); shine.position.set(0.19*s,0.61,0.73); body.add(shine);
+    // paws: pink, little fingers
+    [[0.27,0.28],[0.3,-0.62]].forEach(([px,pz],k)=>{
+      const paw=new THREE.Group(); const pm=new THREE.MeshStandardMaterial({color:0xe2aaa6,roughness:0.6});
+      const palm=mesh(new THREE.SphereGeometry(0.075,10,8),pm); palm.scale.set(1,0.45,1.3); paw.add(palm);
+      for(let f=0;f<4;f++){ const fg=mesh(new THREE.CylinderGeometry(0.014,0.012,0.09,5),pm); fg.rotation.x=Math.PI/2; fg.position.set((f-1.5)*0.035,0,0.1); fg.rotation.z=(f-1.5)*0.25; paw.add(fg); }
+      paw.position.set(px*s,0.04,pz); if(k===1) paw.scale.set(1.2,1,1.5); g.add(paw);
+    });
+  });
+  // whiskers: long, fine, drooping
+  const wp=[];
+  [-1,1].forEach(s=>{ for(let k=0;k<7;k++){ const ox=0.06*s, oy=0.44+(k%3)*0.018, oz=0.93-(k%4)*0.025;
+    const ang=-0.35+k*0.12, L=0.55+Math.random()*0.3;
+    const mx=ox+Math.cos(ang)*L*0.5*s, mz=oz+Math.sin(ang)*L*0.5+0.1, my=oy+0.02;
+    const ex=ox+Math.cos(ang)*L*s, ez=oz+Math.sin(ang)*L+0.12, ey=oy-0.06-k*0.008;
+    wp.push(new THREE.Vector3(ox,oy,oz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(ex,ey,ez)); } });
+  body.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(wp),new THREE.LineBasicMaterial({color:0xe8e0d8,transparent:true,opacity:0.75})));
+  // tail: thick at the base, tapering, scaly
+  const tail=new THREE.Group(); tail.position.set(0,0.36,-0.9); g.add(tail);
+  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(0,-0.22,-0.45),new THREE.Vector3(0.12,-0.32,-1.0),new THREE.Vector3(0.45,-0.33,-1.55),new THREE.Vector3(0.95,-0.33,-1.85)]);
+  const tg=new THREE.TubeGeometry(curve,48,1,8,false); const tp=tg.attributes.position;
+  for(let i=0;i<=48;i++){ const c=curve.getPointAt(i/48), r=0.085*(1-i/48)+0.012;
+    for(let j=0;j<=8;j++){ const idx=i*9+j; const v=new THREE.Vector3().fromBufferAttribute(tp,idx).sub(c).multiplyScalar(r).add(c); tp.setXYZ(idx,v.x,v.y,v.z); } }
+  tg.computeVertexNormals();
+  tail.add(mesh(tg,new THREE.MeshStandardMaterial({color:0xc29486,map:TAILTEX,roughness:0.55})));
+  g.scale.setScalar(1.1);
+  scene.add(g);
+  return {g,body,tail,heading:0,moving:0};
+}
+const velma=makeRat(false), louise=makeRat(true);
+
+/* cat */
+let catZs=[];
+function makeCat(x,z){
+  const g=new THREE.Group(); const orange=mat(0xd98b3e,{roughness:1}); const cream=mat(0xf3d6ad,{roughness:1});
+  const b=mesh(new THREE.SphereGeometry(1,24,16),orange); b.scale.set(1.5,0.62,1.05); b.position.y=0.62; g.add(b);
+  const head=mesh(new THREE.SphereGeometry(0.62,20,14),orange); head.position.set(1.25,0.62,0.55); g.add(head);
+  const muzzle=mesh(new THREE.SphereGeometry(0.3,14,10),cream); muzzle.scale.set(1,0.7,0.8); muzzle.position.set(1.62,0.5,0.82); g.add(muzzle);
+  [-1,1].forEach(s=>{ const ear=mesh(new THREE.ConeGeometry(0.22,0.4,4),orange); ear.position.set(1.15+0.28*s,1.15,0.45); ear.rotation.z=-0.25*s; g.add(ear);
+    const lid=mesh(new THREE.BoxGeometry(0.2,0.04,0.04),mat(0x2a1a14)); lid.position.set(1.5+0.05*s,0.72,1.0+0.18*s*0); lid.position.x=1.45; lid.position.z=0.75+0.25*s; lid.rotation.y=Math.PI/2; g.add(lid); });
+  const collar=mesh(new THREE.TorusGeometry(0.5,0.06,8,20),mat(0x3f6fb0)); collar.position.set(0.95,0.55,0.45); collar.rotation.y=Math.PI/2; g.add(collar);
+  const tag=mesh(new THREE.CylinderGeometry(0.13,0.13,0.04,16),mat(0xf2c14e,{metalness:0.6,roughness:0.3})); tag.rotation.x=Math.PI/2; tag.position.set(1.0,0.35,1.0); g.add(tag);
+  const tl=mesh(new THREE.TorusGeometry(1.25,0.16,8,24,Math.PI*1.1),orange); tl.rotation.x=Math.PI/2; tl.position.set(-0.2,0.18,0.1); g.add(tl);
+  g.position.set(x,0,z); g.rotation.y=-0.3; room.add(g); addCol(x,z-0.1,3.4,2.4);
+  catZs=[0,1,2].map(i=>{ const c=document.createElement('canvas'); c.width=c.height=64; const k=c.getContext('2d'); k.fillStyle='#fff4df'; k.font='bold 52px Grandstander, sans-serif'; k.textAlign='center'; k.fillText('z',32,50);
+    const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true})); s.scale.set(0.5,0.5,0.5); room.add(s); return {s,phase:i/3,x:x+1.3,z:z+0.5}; });
+}
+
+/* furniture per room */
+function furnish(r){
+  cols=[]; catZs=[];
+  if(r===0){
+    box(9,3.4,2.2,3.5,0,-6.9,0x6d8fa3); box(9.4,0.3,2.4,3.5,3.4,-6.9,0xefe2c9,{collide:false});
+    for(let i=0;i<4;i++) box(0.12,0.12,0.06,0.2+i*2.2,2.6,-5.78,0xe8d5a8,{collide:false});
+    box(3.2,7,2.6,-8.8,0,-6.6,0xcfe2d4);
+    box(3.0,0.08,0.05,-8.8,4.3,-5.28,0x9fb8a6,{collide:false});
+    const mags=[0xd9536f,0xf0a92e,0x5f9272,0x3f6fb0,0x8a5a7a];
+    mags.forEach((c,i)=>box(0.32,0.38,0.08,-9.9+i*0.55,2.2+(i%2)*0.5,-5.28,c,{collide:false}));
+    const rug=mesh(new THREE.CircleGeometry(3.4,40),mat(0xd88c6a),{cast:false}); rug.scale.set(1.2,0.8,1); rug.rotation.x=-Math.PI/2; rug.position.set(1,0.01,1.5); room.add(rug);
+    box(5.2,0.25,3.2,1,2.6,1.5,0x9c6a3c,{collide:false});
+    [[-1.3,0.2],[3.3,0.2],[-1.3,2.8],[3.3,2.8]].forEach(([x,z])=>box(0.25,2.6,0.25,x,0,z,0x7d532d));
+    box(1.6,0.35,1.2,6.5,0,-2.5,0xb9bcc2,{opts:{metalness:0.4,roughness:0.4}});
+    const jar=mesh(new THREE.CylinderGeometry(0.55,0.55,1.15,24),new THREE.MeshStandardMaterial({color:0xcfe8f2,transparent:true,opacity:0.55,roughness:0.1}));
+    jar.position.set(6.5,0.93,-2.5); room.add(jar);
+    [0,1,2].forEach(i=>{ const ck=mesh(new THREE.CylinderGeometry(0.3,0.3,0.1,16),mat(0xb0723a)); ck.position.set(6.5+(i-1)*0.15,0.45+i*0.13,-2.5); ck.rotation.z=0.2*(i-1); room.add(ck); });
+    const lid=mesh(new THREE.CylinderGeometry(0.6,0.6,0.15,24),mat(0xd9536f)); lid.position.set(6.5,1.58,-2.5); room.add(lid);
+    box(1.6,1,1.2,7.5,0,4,0xb38654); box(1.2,0.8,0.7,7.5,1,4,0xc9ccd1,{collide:false,opts:{metalness:0.6,roughness:0.3}});
+    [-0.2,0.2].forEach(dx=>box(0.12,0.35,0.5,7.5+dx,1.7,4,0xe0b070,{collide:false}));
+    makeDoor(ROOMS[0].door);
+  } else if(r===1){
+    box(7,1.4,2.4,2.5,0,-6.4,0x8a5a7a); box(7,2.6,0.8,2.5,0,-7.5,0x7a4c6c); box(0.8,2,2.6,-1.4,0,-6.5,0x7a4c6c); box(0.8,2,2.6,6.4,0,-6.5,0x7a4c6c);
+    [0,1].forEach(i=>box(2.6,0.5,1.8,1.1+i*2.8,1.4,-6.3,0xe9b44c,{collide:false}));
+    box(1.2,6,4,-10.3,0,-2,0x6b4a33);
+    const bc=[0xd9536f,0x3f6fb0,0xf0a92e,0x5f9272,0xf3e4c4];
+    for(let s=0;s<3;s++) for(let i=0;i<6;i++) box(0.9,0.9+((i*7+s)%3)*0.15,0.38,-10.1,0.6+s*1.9,-3.5+i*0.55,bc[(i+s)%5],{collide:false});
+    box(4,3.2,1.8,8,0,-7,0x2a2028,{opts:{roughness:0.3}}); box(3.6,0.15,0.6,8,2.1,-5.85,0xfaf6ee,{collide:false});
+    for(let i=0;i<7;i++) box(0.18,0.1,0.35,6.6+i*0.5,2.25,-5.95,0x1a1118,{collide:false});
+    const rug=mesh(new THREE.CircleGeometry(3.6,48),mat(0x5f9272),{cast:false}); rug.rotation.x=-Math.PI/2; rug.position.set(0.5,0.01,1); room.add(rug);
+    const rug2=mesh(new THREE.RingGeometry(2.9,3.2,48),mat(0xf0a92e),{cast:false}); rug2.rotation.x=-Math.PI/2; rug2.position.set(0.5,0.015,1); room.add(rug2);
+    makeCat(0.5,0.6);
+    const bk=mesh(new THREE.CylinderGeometry(1,0.85,1.2,20),mat(0xc9a26b)); bk.position.set(-6,0.6,4); room.add(bk); addCol(-6,4,1.9,1.9);
+    [0xd9536f,0x3f6fb0,0xfff4df,0xf0a92e].forEach((c,i)=>{ const s=mesh(new THREE.SphereGeometry(0.35,12,10),mat(c)); s.scale.set(1.2,0.5,0.8); s.position.set(-6+Math.cos(i*1.6)*0.5,1.25+i*0.08,4+Math.sin(i*1.6)*0.5); room.add(s); });
+    box(0.25,5,0.25,-9.5,0,-6.5,0x3a2a22); const shade=mesh(new THREE.ConeGeometry(0.9,1,20,1,true),mat(0xf3d39a,{side:THREE.DoubleSide,emissive:0x6b4a10})); shade.position.set(-9.5,5.2,-6.5); room.add(shade);
+    const lamp=new THREE.PointLight(0xffc27a,0.6,14); lamp.position.set(-9.5,4.6,-6.5); room.add(lamp);
+    makeDoor(ROOMS[1].door);
+  } else {
+    for(let i=-2;i<=2;i++){ const beam=mesh(new THREE.BoxGeometry(0.5,0.5,D+2),mat(0x4f3a26)); beam.position.set(i*4.5,8.2,0); room.add(beam); }
+    const win=new THREE.Mesh(new THREE.CircleGeometry(1.3,32),new THREE.MeshBasicMaterial({color:0xbfd8ec})); win.position.set(1.5,5.6,-D/2+0.03); room.add(win);
+    const wf=mesh(new THREE.TorusGeometry(1.35,0.12,8,32),mat(0x3a2a1c)); wf.position.set(1.5,5.6,-D/2+0.06); room.add(wf);
+    const moon=new THREE.PointLight(0x9fc3ff,0.5,16); moon.position.set(1.5,5,-5); room.add(moon);
+    box(3,1.6,1.8,-6,0,-5.4,0x7a4a2a); box(3.1,0.25,1.9,-6,1.6,-5.4,0x6a3e22,{collide:false});
+    [-0.9,0.9].forEach(dx=>box(0.18,1.86,1.86,-6+dx,0,-5.4,0x8d8a80,{collide:false,opts:{metalness:0.6,roughness:0.4}}));
+    box(0.5,0.4,0.1,-6,0.9,-4.47,0xd8b24a,{collide:false,opts:{metalness:0.7,roughness:0.3}});
+    box(1,4.4,0.2,5,0,-7.85,0x6e5a44,{collide:false});
+    const tube=mesh(new THREE.CylinderGeometry(0.1,0.1,3.4,12),mat(0xf5f1ea)); tube.position.set(5,2.4,-7.65); room.add(tube);
+    const merc=mesh(new THREE.CylinderGeometry(0.06,0.06,1.0,10),mat(0xd9363f)); merc.position.set(5,1.2,-7.6); room.add(merc);
+    const bulb=mesh(new THREE.SphereGeometry(0.2,12,10),mat(0xd9363f)); bulb.position.set(5,0.55,-7.62); room.add(bulb);
+    box(1.4,0.9,1.0,6,0,4,0xc77b9a); box(0.08,0.5,0.08,6.75,0.5,4,0xd8b24a,{collide:false});
+    box(2,1.6,2,8.8,0,-3,0xb08a5a); box(1.6,1.2,1.6,8.8,1.6,-3,0xa47d4e,{collide:false}); box(2.2,1.8,2,-8.6,0,3,0xb08a5a); box(1.6,1,1.6,-8.4,1.8,3.1,0xc29a68,{collide:false});
+    const lantern=new THREE.PointLight(0xffb066,0.7,12); lantern.position.set(-2,3,0); room.add(lantern);
+    makeDoor(ROOMS[2].door);
+  }
+}
+
+/* puzzle markers + crumbs */
+let puzzles=[], crumbs=[], floorMesh=null;
+function makeMarker(x,z){
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.9,1.15,40),new THREE.MeshBasicMaterial({color:0xffc04d,transparent:true,opacity:0.9,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2; ring.position.set(x,0.03,z); room.add(ring);
+  const gem=new THREE.Mesh(new THREE.OctahedronGeometry(0.28),new THREE.MeshStandardMaterial({color:0xffc04d,emissive:0xb06d00,emissiveIntensity:0.6,roughness:0.3}));
+  gem.position.set(x,3.2,z); room.add(gem);
+  return {ring,gem};
+}
+function makeCrumb(x,z){
+  const m=mesh(new THREE.CylinderGeometry(0.32,0.32,0.22,3),mat(0xffd34d,{emissive:0x6b4a00,emissiveIntensity:0.35}));
+  m.position.set(x,0.35,z); room.add(m); return {m,x,z,taken:false};
+}
+
+/* ---------- game state ---------- */
+const game={level:0,cheese:0,head:0,solved:0,paused:true,started:false};
+const keys=new Set(); let tapTarget=null; let pointerDown=false;
+const startPos=new THREE.Vector3();
+
+function clearRoom(){
+  while(room.children.length){ const o=room.children.pop(); o.traverse(n=>{ if(n.geometry) n.geometry.dispose(); }); }
+}
+function loadLevel(r,silent){
+  clearRoom(); game.level=r; game.solved=0;
+  floorMesh=shell(r); furnish(r);
+  const R=ROOMS[r];
+  puzzles=R.puzzles.map(def=>{ const mk=makeMarker(def.at[0],def.at[1]); return {def,x:def.at[0],z:def.at[1],...mk,solved:false,data:null}; });
+  game.warmDone=false;
+  crumbs=R.crumbs.map(([x,z])=>makeCrumb(x,z));
+  scene.fog = new THREE.Fog(r===2?0x2b2030:0x3a2b33, 30, 60);
+  scene.background=new THREE.Color(r===2?0x2b2030:0x3a2b33);
+  velma.g.position.set(R.start[0],0,R.start[1]); velma.heading=Math.PI; velma.g.rotation.y=Math.PI;
+  louise.g.position.set(R.start[0]+1.2,0,R.start[1]+0.2); louise.heading=Math.PI;
+  tapTarget=null;
+  $('roomNum').textContent=`Room ${r+1} of 3`; $('roomName').textContent=R.name;
+  updateDots(); writeSave();
+  if(!silent) setTimeout(()=>R.intro.forEach((l,i)=>setTimeout(()=>say(l[0],l[1],4800),i*1400)),500);
+}
+function updateDots(){
+  const d=$('dots'); d.innerHTML='';
+  puzzles.forEach(p=>{ const s=document.createElement('span'); s.className='dot'+(p.solved?' on':''); d.appendChild(s); });
+  const t=document.createElement('span'); t.textContent=game.solved>=3?'Mouse hole open!':`${game.solved}/3 solved`; d.appendChild(t);
+  $('cheeseN').textContent=game.cheese;
+}
+
+/* ---------- speech ---------- */
+function who(w){ return w==='v'?'<span class="who v">Velma</span>': w==='l'?'<span class="who l">Louise</span>':'<span class="who n">Psst</span>'; }
+function say(w,text,ms=4200){
+  const t=$('talk'); const b=document.createElement('div'); b.className='bubble'; b.innerHTML=who(w)+'<span>'+text+'</span>';
+  t.appendChild(b); while(t.children.length>2) t.removeChild(t.firstChild);
+  setTimeout(()=>{ if(b.parentNode) b.parentNode.removeChild(b); },ms);
+}
+
+/* ---------- movement / collision ---------- */
+function resolve(p,r){
+  p.x=Math.max(-W/2+0.7,Math.min(W/2-0.7,p.x)); p.z=Math.max(-D/2+0.7,Math.min(D/2-0.7,p.z));
+  for(const c of cols){
+    const minX=c.x-c.w/2, maxX=c.x+c.w/2, minZ=c.z-c.d/2, maxZ=c.z+c.d/2;
+    const cx=Math.max(minX,Math.min(maxX,p.x)), cz=Math.max(minZ,Math.min(maxZ,p.z));
+    let dx=p.x-cx, dz=p.z-cz; const d2=dx*dx+dz*dz;
+    if(d2<r*r){
+      if(d2>1e-6){ const d=Math.sqrt(d2); p.x=cx+dx/d*r; p.z=cz+dz/d*r; }
+      else { const pen=[p.x-minX,maxX-p.x,p.z-minZ,maxZ-p.z]; const m=Math.min(...pen); const i=pen.indexOf(m);
+        if(i===0) p.x=minX-r; else if(i===1) p.x=maxX+r; else if(i===2) p.z=minZ-r; else p.z=maxZ+r; }
+    }
+  }
+}
+function angLerp(a,b,t){ let d=b-a; while(d>Math.PI) d-=Math.PI*2; while(d<-Math.PI) d+=Math.PI*2; return a+d*t; }
+
+window.addEventListener('keydown',e=>{
+  if(e.target && e.target.tagName==='INPUT') return;
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){ keys.add(k); tapTarget=null; e.preventDefault(); }
+  if((k==='e'||k===' '||k==='enter') && !game.paused && nearPuzzle){ e.preventDefault(); openPuzzle(nearPuzzle); }
+  if(k==='escape'){ if(!$('recipe').hidden) hideRecipe(); else if(!$('settings').hidden) closeSettings(); else if(!$('parent').hidden) closeParent(); else if(!$('sheet').hidden) closePuzzle(); }
+});
+window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
+window.addEventListener('blur',()=>keys.clear());
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+function floorHit(e){
+  const r=canvas.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc,camera); const h=ray.intersectObject(floorMesh); return h.length?h[0].point:null;
+}
+canvas.addEventListener('pointerdown',e=>{ if(game.paused) return; pointerDown=true; const p=floorHit(e); if(p) tapTarget=p.clone(); $('tapHint').hidden=true; });
+canvas.addEventListener('pointermove',e=>{ if(!pointerDown||game.paused) return; const p=floorHit(e); if(p) tapTarget=p.clone(); });
+window.addEventListener('pointerup',()=>{ pointerDown=false; });
+
+/* ---------- settings + progress storage ---------- */
+const SET_KEY='vl-house-of-x-settings', STAT_KEY='vl-house-of-x-stats';
+const DEFAULTS={music:true,sfx:true,vol:0.5,types:{one:true,two:true,three:false,both:false},adaptive:true,level:2};
+function loadJSON(k){ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } }
+function saveJSON(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+const settings=Object.assign({},DEFAULTS,loadJSON(SET_KEY)||{});
+settings.types=Object.assign({},DEFAULTS.types,settings.types||{});
+const CAT_KEYS=['one','two','three','both'];
+const blankCat=()=>({n:0,clean:0,time:0,hints:0,opErr:0,numErr:0,head:0});
+let stats=loadJSON(STAT_KEY)||{};
+function normStats(){ stats.cats=stats.cats||{}; stats.skill=stats.skill||{}; stats.streak=stats.streak||{}; stats.history=stats.history||[];
+  CAT_KEYS.forEach(k=>{ stats.cats[k]=Object.assign(blankCat(),stats.cats[k]||{}); if(!stats.skill[k]) stats.skill[k]=1; if(stats.streak[k]==null) stats.streak[k]=0; }); }
+normStats();
+const levelFor = cat => settings.adaptive ? stats.skill[cat] : settings.level;
+
+function chooseProblem(pz){
+  const en=CAT_KEYS.filter(k=>settings.types[k]);
+  let cat;
+  if(!game.warmDone && en.includes('one') && en.length>1) cat='one';
+  else { const w={one:1,two:3,three:2,both:2}, pool=[]; en.forEach(k=>{ for(let i=0;i<w[k];i++) pool.push(k); }); cat=pick(pool); }
+  game.warmDone=true;
+  const lvl=levelFor(cat);
+  const ts=CATS[cat].filter(t=>t!=='apar'||lvl>=2||cat!=='two');
+  const type= ts.includes(pz.def.pref)&&Math.random()<0.6 ? pz.def.pref : pick(ts);
+  return makeProblem(type,lvl,!!pz.def.forceNeg);
+}
+
+/* ---------- audio: cozy music + sound effects, all synthesized ---------- */
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+const audio={ctx:null,master:null,mus:null,fx:null,timer:null,next:0,bar:0,
+  init(){
+    if(this.ctx){ if(this.ctx.state==='suspended') this.ctx.resume(); this.apply(); return; }
+    try{ const C=window.AudioContext||window.webkitAudioContext; if(!C) return; this.ctx=new C(); }catch(e){ return; }
+    const c=this.ctx; this.master=c.createGain(); this.master.connect(c.destination);
+    const lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=2200; lp.connect(this.master);
+    this.mus=c.createGain(); this.mus.gain.value=0; this.mus.connect(lp);
+    this.fx=c.createGain(); this.fx.gain.value=0.45; this.fx.connect(this.master);
+    this.apply();
+  },
+  apply(){
+    if(!this.ctx) return; const t=this.ctx.currentTime;
+    this.mus.gain.setTargetAtTime(settings.music?0.32*settings.vol:0,t,0.4);
+    this.fx.gain.setTargetAtTime(settings.sfx?0.45:0,t,0.05);
+    if(settings.music && !this.timer){ this.next=Math.max(this.next,t+0.1); this.timer=setInterval(()=>this.schedule(),250); }
+    if(!settings.music && this.timer){ clearInterval(this.timer); this.timer=null; }
+  },
+  tone(f,t0,dur,{type='sine',vol=0.2,dest=this.fx,f2=null,attack=0.01}={}){
+    const c=this.ctx, o=c.createOscillator(), g=c.createGain(); o.type=type; o.frequency.setValueAtTime(f,t0);
+    if(f2) o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+    g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+attack); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+    o.connect(g); g.connect(dest); o.start(t0); o.stop(t0+dur+0.05);
+  },
+  CHORDS:[[53,57,60,64],[50,53,57,60],[46,50,53,57],[48,52,55,57]],
+  MEL:[65,67,69,72,74,77],
+  schedule(){
+    const c=this.ctx; if(!c) return; const BAR=3.2;
+    while(this.next < c.currentTime+0.8){
+      const t=this.next, ch=this.CHORDS[this.bar%4];
+      ch.forEach((m,i)=>{ [0,4].forEach(det=>{ const o=c.createOscillator(), g=c.createGain(); o.type=det?'triangle':'sine'; o.frequency.value=mtof(m); o.detune.value=det;
+        g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(det?0.012:0.03,t+1.0); g.gain.setValueAtTime(det?0.012:0.03,t+BAR-0.6); g.gain.exponentialRampToValueAtTime(0.0001,t+BAR+0.9);
+        o.connect(g); g.connect(this.mus); o.start(t); o.stop(t+BAR+1); }); });
+      this.tone(mtof(ch[0]-12),t,BAR,{vol:0.05,dest:this.mus,attack:0.3});
+      for(let s=0;s<8;s++){ if(Math.random()<0.32){ const m=pick(this.MEL), tt=t+s*0.4+Math.random()*0.03;
+        this.tone(mtof(m),tt,1.4,{vol:0.05,dest:this.mus,attack:0.005}); this.tone(mtof(m)*2,tt,0.6,{vol:0.012,dest:this.mus,attack:0.005}); } }
+      this.next+=BAR; this.bar++;
+    }
+  },
+};
+function sfx(name){
+  if(!audio.ctx || !settings.sfx) return; const t=audio.ctx.currentTime+0.01, T=(f,d,dt,o)=>audio.tone(f,t+dt,d,o);
+  if(name==='crumb'){ T(880,0.12,0,{vol:0.18}); T(1320,0.16,0.07,{vol:0.15}); }
+  else if(name==='good'){ [523,659,784,1047].forEach((f,i)=>T(f,0.35,i*0.07,{vol:0.16,type:'triangle'})); }
+  else if(name==='step'){ T(659,0.18,0,{vol:0.14,type:'triangle'}); T(988,0.25,0.07,{vol:0.12,type:'triangle'}); }
+  else if(name==='oops'){ T(330,0.3,0,{vol:0.13,type:'triangle',f2:240}); }
+  else if(name==='slash'){ T(1800,0.12,0,{vol:0.05,type:'sawtooth',f2:600}); }
+  else if(name==='door'){ T(300,0.7,0,{vol:0.15,f2:900}); T(450,0.7,0.1,{vol:0.08,f2:1350}); }
+  else if(name==='level'){ [1047,1319,1568,2093].forEach((f,i)=>T(f,0.4,i*0.08,{vol:0.1})); }
+  else if(name==='tap'){ T(700,0.06,0,{vol:0.07}); }
+}
+document.addEventListener('visibilitychange',()=>{ if(!audio.ctx) return; if(document.hidden) audio.ctx.suspend(); else audio.ctx.resume(); });
+
+/* ---------- puzzle sheet ---------- */
+let cur=null, nearPuzzle=null;
+const actBtn=$('actBtn');
+actBtn.addEventListener('click',()=>{ if(nearPuzzle) openPuzzle(nearPuzzle); });
+function syncPause(){ game.paused = !game.started || ['titleScreen','sheet','recipe','settings','parent','victory'].some(id=>!$(id).hidden); }
+
+function openPuzzle(pz){
+  if(pz.solved || !$('sheet').hidden) return;
+  if(!pz.data) pz.data=chooseProblem(pz);
+  keys.clear(); tapTarget=null; actBtn.hidden=true;
+  const d=pz.data;
+  cur={pz,d,stage:'intro',step:0,hint:0,wrong:0,tileStage:0,t0:performance.now(),opErr:0,numErr:0,hints:0,headMiss:false};
+  $('pKicker').textContent=`${ROOMS[game.level].name} · Puzzle ${puzzles.indexOf(pz)+1} of 3 · ${CAT_NAMES[d.cat]} · ${LEVEL_NAMES[d.lvl]}`;
+  $('pTitle').textContent=pz.def.name;
+  $('pStory').innerHTML=pz.def.story(d).map(([w,t])=>`<p>${who(w)}<span>${t}</span></p>`).join('');
+  $('pEq').innerHTML=d.eq; workStart(); setFb('','');
+  renderTiles(); renderControls();
+  $('sheet').hidden=false; $('hintBtn').hidden=false; syncPause(); sfx('tap');
+  setTimeout(()=>{ const b=$('pControls').querySelector('button'); if(b) b.focus({preventScroll:true}); },50);
+}
+function closePuzzle(){ $('sheet').hidden=true; cur=null; syncPause(); canvas.focus({preventScroll:true}); }
+$('pClose').addEventListener('click',closePuzzle);
+
+function setFb(cls,html){ const f=$('pFeedback'); f.className='feedback'+(cls?' '+cls:''); f.innerHTML=html; }
+
+function renderTiles(){
+  const el=$('pTiles'); const d=cur.d;
+  if(d.type!=='axpb' || d.x<1 || d.c>36){ el.innerHTML=''; return; }
+  const st=cur.tileStage, a=d.a, b=d.b, c=d.c;
+  let L='', R='';
+  for(let i=0;i<a;i++) L+=`<span class="tx${st>=3&&i>0?' dim':''}">x</span>`;
+  if(st<2) for(let i=0;i<b;i++) L+=`<span class="t1${st===1?' gone':''}"></span>`;
+  if(st<3){ const n= st>=2 ? c-b : c; for(let i=0;i<n;i++) R+=`<span class="t1${st===1&&i>=c-b?' gone':''}"></span>`; }
+  else { const per=(c-b)/a; for(let g=0;g<a;g++){ let t=''; for(let i=0;i<per;i++) t+='<span class="t1"></span>'; R+=`<span class="grp${g===0?' hi':''}">${t}</span>`; } }
+  const cap = st===0?`Each <b>x</b> bar is one mystery bag. Each little square is 1.`: st===1?`Take ${b} squares off <b>both</b> sides. The seesaw stays balanced.`: st===2?`${a} bags balance ${c-b} squares.`:`Split into ${a} equal groups: one bag matches one group.`;
+  el.innerHTML=`<div style="display:grid;gap:6px;justify-items:center;width:100%"><div class="tiles"><div class="side">${L}</div><span class="eqsign">=</span><div class="side">${R}</div></div><div class="tiles-cap">${cap}</div></div>`;
+}
+
+const inputHTML=`<button class="pm" id="pmBtn" aria-label="Make it negative or positive">±</button><input id="ansInput" inputmode="numeric" autocomplete="off" aria-label="Your answer">`;
+function answerRow(lhs){ return `<div class="answer"><span class="lhs">${lhs} =</span>${inputHTML}<button class="btn-main" id="ansBtn">Check</button></div>`; }
+function coefRow(rest){ return `<div class="answer">${inputHTML}<span class="lhs">${rest}</span><button class="btn-main" id="ansBtn">Check</button></div>`; }
+function wireAnswer(fn){
+  const inp=$('ansInput');
+  $('pmBtn').addEventListener('click',()=>{ const v=inp.value.trim(); inp.value = v.startsWith('-')||v.startsWith('−') ? v.slice(1) : '-'+v; inp.focus(); });
+  $('ansBtn').addEventListener('click',()=>fn(parseAns(inp.value)));
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); fn(parseAns(inp.value)); } });
+  setTimeout(()=>inp.focus({preventScroll:true}),60);
+}
+function parseAns(v){ v=String(v).trim().replace('−','-').replace(/\s/g,''); if(!/^-?\d+$/.test(v)) return null; return parseInt(v,10); }
+const leftOf = r => [r.A,r.B,r.C].filter(Boolean).join(' ');
+
+function renderControls(){
+  const c=$('pControls'); const d=cur.d, n=d.steps.length;
+  if(cur.stage==='intro'){
+    c.innerHTML=`<p class="prompt">${n===1?'A quick warm-up! ':''}How do you want to tackle it?</p>
+      <div class="ops"><button class="op" id="goSteps">Step by step, with Velma and Louise</button>
+      <button class="op" id="goHead">I can solve it in my head! <span style="font-weight:400;font-size:14px">(+5 bonus cheese)</span></button></div>`;
+    $('goSteps').onclick=()=>{ cur.stage='op'; setFb('',''); renderControls(); };
+    $('goHead').onclick=()=>{ cur.stage='head'; setFb('',''); renderControls(); };
+  } else if(cur.stage==='head'){
+    c.innerHTML=`<p class="prompt">Speedy Velma mode: work it out in your head.</p>${answerRow(X)}
+      <button class="linkish" id="toSteps">Actually, let's do it step by step</button>`;
+    wireAnswer(v=>{
+      if(v===null){ setFb('oops','Type a whole number. Use ± for a negative.'); return; }
+      if(v===d.x){ solved(true); }
+      else { cur.headMiss=true; sfx('oops'); setFb('oops',`${who('v')} Hmm, not quite! No worries, let's work through it together.`); cur.stage='op'; renderControls(); }
+    });
+    $('toSteps').onclick=()=>{ cur.stage='op'; setFb('',''); renderControls(); };
+  } else if(cur.stage==='op'){
+    const s=d.steps[cur.step];
+    c.innerHTML=`<p class="prompt">${n===1?s.prompt:s.prompt}</p><div class="ops">${shuffle(s.ops).map(o=>`<button class="op" data-ok="${o.ok?1:0}" data-fb="${encodeURIComponent(o.fb||'')}">${o.label}</button>`).join('')}</div>`;
+    c.querySelectorAll('.op').forEach(btn=>btn.addEventListener('click',()=>{
+      if(btn.dataset.ok==='1'){
+        cur.hint=0; cur.wrong=0; sfx('step');
+        workOp(cur.step);
+        cur.tileStage = cur.step===0?1:3; renderTiles();
+        setFb('good',`${who('l')} Yes! ${d.L.ops[cur.step].msg}${s.coef?'':' Now work out the new number in the box.'}`);
+        cur.stage='num'; renderControls();
+      } else {
+        cur.opErr++; sfx('oops');
+        btn.classList.add('no'); btn.disabled=true;
+        setFb('oops',`${who('l')} ${decodeURIComponent(btn.dataset.fb)}`);
+      }
+    }));
+  } else if(cur.stage==='num'){
+    const s=d.steps[cur.step], r=d.L.res[cur.step];
+    if(s.coef){ const f=h=>h?h.replace(Q,''):''; c.innerHTML=`<p class="prompt">How many ${X}'s are left on the left side?</p>${coefRow(`${[f(r.A),f(r.B),f(r.C)].filter(Boolean).join(' ')} = ${[r.D,r.E].filter(Boolean).join(' ')}`)}`; }
+    else c.innerHTML=`<p class="prompt">Work it out:</p>${answerRow(leftOf(r))}`;
+    wireAnswer(v=>{
+      if(v===null){ setFb('oops','Type a whole number. Use ± for a negative.'); return; }
+      if(v===s.ans){
+        workFill(cur.step,s.ans);
+        $('pEq').innerHTML=resEq(cur.step,s.ans);
+        cur.hint=0; cur.wrong=0;
+        if(cur.step<n-1){ cur.step++; cur.stage='op'; if(cur.step===1){ cur.tileStage=2; renderTiles(); } sfx('step');
+          setFb('good',`${who('v')} ${pick(['Nice mental math!','Crumb-perfect!','Correct!','Squeaky clean!'])} ${n-cur.step===1?'One more step.':`${n-cur.step} steps to go.`}`); renderControls(); }
+        else solved(false);
+      } else {
+        cur.wrong++; cur.numErr++; sfx('oops');
+        const h=s.numHints[Math.min(cur.wrong-1,s.numHints.length-1)];
+        setFb('oops',`${who('v')} Not quite. ${h}`);
+        $('ansInput').select();
+      }
+    });
+  } else if(cur.stage==='done'){
+    c.innerHTML=`<div class="check">Check: ${d.check} <b>✓</b></div>
+      <div class="reward">+${cur.reward} cheese${cur.headBonus?' · Speedy Velma bonus!':''}</div>
+      <button class="btn-main" id="backBtn">Back to exploring</button>`;
+    $('backBtn').onclick=()=>{ closePuzzle(); afterSolve(); };
+    setTimeout(()=>$('backBtn').focus({preventScroll:true}),60);
+  }
+}
+
+$('hintBtn').addEventListener('click',()=>{
+  if(!cur) return; const d=cur.d;
+  let list;
+  if(cur.stage==='intro'||cur.stage==='head') list=[`Undo the adding or subtracting first, then the multiplying or dividing. With brackets, work from the outside in.`, `Try it: ${d.steps.map(s=>plainEq(s.ops.find(o=>o.ok).label).toLowerCase()).join(', then ')}.`];
+  else if(cur.stage==='op') list=d.steps[cur.step].opHints;
+  else if(cur.stage==='num') list=d.steps[cur.step].numHints;
+  else return;
+  setFb('hint',`${who('l')} ${list[Math.min(cur.hint,list.length-1)]}`);
+  cur.hint++; cur.hints++;
+});
+
+function recordResult(head){
+  const d=cur.d, cat=d.cat, sec=(performance.now()-cur.t0)/1000;
+  const clean = cur.opErr===0 && cur.numErr===0 && cur.hints===0 && !cur.headMiss;
+  const st=stats.cats[cat]; st.n++; if(clean) st.clean++; st.time+=sec; st.hints+=cur.hints; st.opErr+=cur.opErr; st.numErr+=cur.numErr; if(head) st.head++;
+  stats.history.unshift({at:Date.now(),cat,eq:plainEq(d.eq),sec:Math.round(sec),opErr:cur.opErr,numErr:cur.numErr,hints:cur.hints,head,lvl:d.lvl});
+  stats.history=stats.history.slice(0,30);
+  let lv=null;
+  if(settings.adaptive){
+    const quick = sec < {one:40,two:80,three:120,both:130}[cat];
+    const struggle = cur.opErr+cur.numErr+(cur.headMiss?1:0)>=2 || cur.hints>=2;
+    if(clean&&quick){ stats.streak[cat]++; if(stats.streak[cat]>=2 && stats.skill[cat]<4){ stats.skill[cat]++; stats.streak[cat]=0; lv='up'; } }
+    else { stats.streak[cat]=0; if(struggle && stats.skill[cat]>1){ stats.skill[cat]--; lv='down'; } }
+  }
+  saveJSON(STAT_KEY,stats);
+  return lv;
+}
+
+function solved(head){
+  const d=cur.d; cur.stage='done';
+  cur.reward = head ? d.steps.length+5 : d.steps.length+1; cur.headBonus=head;
+  if(head){ game.head++; $('pEq').innerHTML=`${X} = ${F(d.x)}`; workStart(); d.steps.forEach((s,i)=>{ workOp(i); workFill(i,s.ans); }); }
+  game.cheese+=cur.reward;
+  cur.tileStage=3; renderTiles();
+  setFb('good',`${who(pick(['v','l']))} <b>${pick(PRAISE)}</b> ${X} = ${F(d.x)}. Let's always check by putting it back in:`);
+  cur.pz.solved=true; game.solved++; game.lastLv={dir:recordResult(head),cat:d.cat};
+  cur.pz.ring.material.color.set(0x7fc79a); cur.pz.gem.visible=false;
+  $('hintBtn').hidden=true; sfx('good');
+  updateDots(); writeSave(); renderControls();
+}
+const SOLVE_LINES={
+  jar:[['l','One bag of seeds, coming right up. Crunch.']],
+  fridge:[['v','The fridge is open! Yogurt achieved. This is the best day of my life.']],
+  toast:[['l','Okay, fine. I ate the crumbs. They were delicious and I regret nothing.']],
+  basket:[['v','Sock nest: built. Napping in it: later.']],
+  piano:[['l','Velma is dancing. She says she isn’t. She is.']],
+  cat:[['v','(whispering) We did it. He didn’t even twitch a whisker.']],
+  trunk:[['l','Old photos, a tiny teacup, and a single peanut. Treasure!']],
+  thermo:[['v','Below zero! No wonder my tail is cold.']],
+  music:[['l','It’s playing! Velma, it’s our song.'],['v','We have a song?']],
+};
+function afterSolve(){
+  const last=puzzles.filter(p=>p.solved).slice(-1)[0];
+  let delay=0;
+  if(last && SOLVE_LINES[last.def.id]) SOLVE_LINES[last.def.id].forEach((l,i)=>{ setTimeout(()=>say(l[0],l[1]),i*1300); delay=(i+1)*1300; });
+  const lv=game.lastLv;
+  if(lv && lv.dir==='up') setTimeout(()=>{ sfx('level'); say('l',`Level up on ${CAT_NAMES[lv.cat].toLowerCase()} puzzles! The numbers get a little bigger now.`,5200); },delay+200);
+  if(lv && lv.dir==='down') setTimeout(()=>say('v',`Let's make the next ${CAT_NAMES[lv.cat].toLowerCase()} puzzles a bit friendlier. Warm-up time!`,5200),delay+200);
+  game.lastLv=null;
+  if(game.solved>=3 && !door.open){
+    door.open=true;
+    setTimeout(()=>{ sfx('door'); say('n', game.level<2?'All three solved! The mouse hole at the back wall is glowing. Head through it!':'All three solved! The last mouse hole leads to the snack stash!',5200); },delay+1600);
+  }
+}
+
+/* ---------- recipe card ---------- */
+function showRecipe(){ $('recipe').hidden=false; syncPause(); $('recipeClose').focus(); }
+function hideRecipe(){ $('recipe').hidden=true; syncPause(); }
+$('recipeBtn').addEventListener('click',showRecipe); $('pRecipe').addEventListener('click',showRecipe); $('recipeClose').addEventListener('click',hideRecipe);
+
+/* ---------- settings screen ---------- */
+const TYPE_IDS={one:'tOne',two:'tTwo',three:'tThree',both:'tBoth'};
+let settingsSnapshot='';
+function openSettings(){
+  $('setMusic').checked=settings.music; $('setSfx').checked=settings.sfx; $('setVol').value=settings.vol;
+  CAT_KEYS.forEach(k=>$(TYPE_IDS[k]).checked=settings.types[k]);
+  $('setAdaptive').checked=settings.adaptive; renderLevelSeg(); $('typeNote').textContent='';
+  settingsSnapshot=JSON.stringify({t:settings.types,a:settings.adaptive,l:settings.level});
+  $('settings').hidden=false; syncPause(); $('setDone').focus();
+}
+function closeSettings(){
+  saveJSON(SET_KEY,settings); $('settings').hidden=true; syncPause();
+  if(JSON.stringify({t:settings.types,a:settings.adaptive,l:settings.level})!==settingsSnapshot) puzzles.forEach(p=>{ if(!p.solved) p.data=null; });
+}
+function renderLevelSeg(){
+  const seg=$('levelSeg'); seg.hidden=settings.adaptive;
+  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',String(+b.dataset.l===settings.level)));
+}
+$('setMusic').addEventListener('change',e=>{ settings.music=e.target.checked; audio.init(); audio.apply(); });
+$('setSfx').addEventListener('change',e=>{ settings.sfx=e.target.checked; audio.init(); audio.apply(); sfx('tap'); });
+$('setVol').addEventListener('input',e=>{ settings.vol=+e.target.value; audio.init(); audio.apply(); });
+CAT_KEYS.forEach(k=>$(TYPE_IDS[k]).addEventListener('change',e=>{
+  if(!e.target.checked && CAT_KEYS.filter(j=>settings.types[j]).length===1){ e.target.checked=true; $('typeNote').textContent='Keep at least one problem type switched on.'; return; }
+  settings.types[k]=e.target.checked; $('typeNote').textContent='';
+}));
+$('setAdaptive').addEventListener('change',e=>{ settings.adaptive=e.target.checked; renderLevelSeg(); });
+$('levelSeg').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ settings.level=+b.dataset.l; renderLevelSeg(); }));
+$('setDone').addEventListener('click',closeSettings);
+$('settingsBtn').addEventListener('click',openSettings); $('titleSettings').addEventListener('click',openSettings);
+
+/* ---------- grown-ups' progress screen ---------- */
+let holdT=null;
+function openParent(){ $('parentLock').hidden=false; $('parentBody').hidden=true; $('parent').hidden=false; syncPause(); }
+function closeParent(){ $('parent').hidden=true; syncPause(); }
+const holdBtn=$('holdBtn');
+function holdStart(e){ e.preventDefault(); holdBtn.classList.add('holding'); holdT=setTimeout(()=>{ holdBtn.classList.remove('holding'); renderParent(); $('parentLock').hidden=true; $('parentBody').hidden=false; },2000); }
+function holdEnd(){ holdBtn.classList.remove('holding'); clearTimeout(holdT); }
+holdBtn.addEventListener('pointerdown',holdStart); ['pointerup','pointerleave','pointercancel'].forEach(ev=>holdBtn.addEventListener(ev,holdEnd));
+holdBtn.addEventListener('keydown',e=>{ if((e.key===' '||e.key==='Enter') && !e.repeat) holdStart(e); });
+holdBtn.addEventListener('keyup',holdEnd);
+$('parentClose').addEventListener('click',closeParent); $('titleParent').addEventListener('click',openParent);
+
+function fmtTime(s){ s=Math.round(s); return s<60?`${s}s`:`${Math.floor(s/60)}m ${String(s%60).padStart(2,'0')}s`; }
+function renderParent(){
+  const C=stats.cats; const total=CAT_KEYS.reduce((t,k)=>t+C[k].n,0), clean=CAT_KEYS.reduce((t,k)=>t+C[k].clean,0), head=CAT_KEYS.reduce((t,k)=>t+C[k].head,0);
+  let tricky='';
+  if(total){
+    const op=CAT_KEYS.reduce((t,k)=>t+C[k].opErr,0), nm=CAT_KEYS.reduce((t,k)=>t+C[k].numErr,0);
+    tricky = op===0&&nm===0 ? 'No slip-ups recorded yet.' : op>nm*1.3 ? 'Most slip-ups happen when choosing which operation to undo. The recipe card and the “undo in reverse order” idea are worth practising together.' : nm>op*1.3 ? 'She usually picks the right step. Most slip-ups are in the mental arithmetic, so quick number practice will pay off.' : 'Slip-ups are split between choosing the step and the arithmetic.';
+  }
+  const rows=CAT_KEYS.map(k=>{ const s=C[k]; const on=settings.types[k];
+    if(!s.n) return `<tr><th scope="row">${CAT_NAMES[k]}${on?'':' <span class="off">off</span>'}</th><td>${LEVEL_NAMES[stats.skill[k]]}</td><td colspan="5" class="muted">Not tried yet</td></tr>`;
+    const spot = s.opErr===0&&s.numErr===0 ? 'Smooth so far' : s.opErr>s.numErr ? 'Choosing the step' : s.numErr>s.opErr ? 'Mental arithmetic' : 'A bit of both';
+    const pct=Math.round(100*s.clean/s.n);
+    return `<tr><th scope="row">${CAT_NAMES[k]}${on?'':' <span class="off">off</span>'}</th><td>${LEVEL_NAMES[stats.skill[k]]}</td><td>${s.n}</td><td><span class="bar"><span style="width:${pct}%"></span></span>${pct}%</td><td>${fmtTime(s.time/s.n)}</td><td>${(s.hints/s.n).toFixed(1)}</td><td>${spot}</td></tr>`; }).join('');
+  const hist=stats.history.slice(0,12).map(h=>{ const ok=!h.opErr&&!h.numErr&&!h.hints;
+    return `<li><span class="eqp">${h.eq}</span><span class="muted">${CAT_NAMES[h.cat]} · ${LEVEL_NAMES[h.lvl]} · ${fmtTime(h.sec)}${h.head?' · in her head':''}</span><span class="pill ${ok?'ok':'meh'}">${ok?'First try':`${h.opErr+h.numErr} slip${h.opErr+h.numErr===1?'':'s'}${h.hints?`, ${h.hints} hint${h.hints>1?'s':''}`:''}`}</span></li>`; }).join('');
+  $('parentBody').innerHTML=`
+    <div class="stats">
+      <div class="stat"><span class="k">Puzzles solved</span><b>${total}</b></div>
+      <div class="stat"><span class="k">First try, no hints</span><b>${total?Math.round(100*clean/total)+'%':'—'}</b></div>
+      <div class="stat"><span class="k">Solved in her head</span><b>${head}</b></div>
+    </div>
+    ${total?`<p class="note-p">${tricky}</p>`:'<p class="note-p">Nothing recorded yet. Results appear here after the first puzzle.</p>'}
+    <div class="tablewrap"><table class="ptable">
+      <thead><tr><th>Type</th><th>Level</th><th>Solved</th><th>First try</th><th>Avg time</th><th>Hints each</th><th>Trickiest part</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="muted small">“First try” means no wrong steps, no wrong answers and no hints. Levels change on their own when adaptive difficulty is on: up after two quick, clean solves in a row, down after a puzzle with two or more slips or hints.</p>
+    ${hist?`<h3 class="h3">Recent puzzles</h3><ul class="hist">${hist}</ul>`:''}
+    <div class="row" id="resetRow"><button class="btn-ghost" id="resetBtn">Reset progress</button></div>`;
+  $('resetBtn').onclick=()=>{
+    $('resetRow').innerHTML=`<span>Erase all progress and levels?</span><button class="btn-main" id="resetYes">Yes, reset</button><button class="btn-ghost" id="resetNo">Keep it</button>`;
+    $('resetYes').onclick=()=>{ stats={}; normStats(); saveJSON(STAT_KEY,stats); renderParent(); };
+    $('resetNo').onclick=renderParent;
+  };
+}
+
+/* ---------- start / rooms ---------- */
+function begin(level,cheese,head){
+  audio.init(); audio.apply();
+  $('titleScreen').hidden=true; game.started=true;
+  game.cheese=cheese; game.head=head; loadLevel(level); syncPause(); canvas.focus({preventScroll:true});
+}
+const save=loadSave();
+if(save && save.level>0 && save.level<3){ const c=$('contBtn'); c.hidden=false; c.textContent=`Continue in the ${ROOMS[save.level].short}`; c.onclick=()=>begin(save.level,save.cheese||0,save.head||0); }
+$('startBtn').addEventListener('click',()=>begin(0,0,0));
+$('againBtn').addEventListener('click',()=>{ $('victory').hidden=true; begin(0,0,0); });
+
+function nextRoom(){
+  game.paused=true; const f=$('fade'); f.classList.add('on'); sfx('door');
+  setTimeout(()=>{
+    if(game.level>=2){ f.classList.remove('on'); $('vCheese').textContent=game.cheese; $('vHead').textContent=game.head; $('victory').hidden=false; syncPause(); try{localStorage.removeItem(SAVE_KEY);}catch(e){} return; }
+    loadLevel(game.level+1); f.classList.remove('on'); syncPause();
+  },500);
+}
+
+/* ---------- loop ---------- */
+const clock=new THREE.Clock(); const camPos=new THREE.Vector3(); const v3=new THREE.Vector3();
+let camInit=false;
+function resize(){ const w=window.innerWidth,h=window.innerHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+window.addEventListener('resize',resize); resize();
+
+function placeTag(el,rat){
+  v3.copy(rat.g.position); v3.y+=1.35; v3.project(camera);
+  if(v3.z>1){ el.style.display='none'; return; } el.style.display='';
+  el.style.transform=`translate(${(v3.x*0.5+0.5)*window.innerWidth}px,${(-v3.y*0.5+0.5)*window.innerHeight}px) translate(-50%,-100%)`;
+}
+
+function tick(){
+  const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
+  const vp=velma.g.position;
+  let mx=0,mz=0;
+  if(!game.paused){
+    if(keys.has('arrowup')||keys.has('w')) mz-=1; if(keys.has('arrowdown')||keys.has('s')) mz+=1;
+    if(keys.has('arrowleft')||keys.has('a')) mx-=1; if(keys.has('arrowright')||keys.has('d')) mx+=1;
+    if(!mx&&!mz&&tapTarget){ const dx=tapTarget.x-vp.x, dz=tapTarget.z-vp.z; const d=Math.hypot(dx,dz); if(d>0.25){ mx=dx/d; mz=dz/d; } else tapTarget=null; }
+  }
+  const len=Math.hypot(mx,mz);
+  if(len>0){
+    mx/=len; mz/=len; const sp=5.2;
+    const before=vp.clone();
+    vp.x+=mx*sp*dt; vp.z+=mz*sp*dt; resolve(vp,0.55);
+    if(tapTarget && vp.distanceTo(before)<sp*dt*0.15) tapTarget=null;
+    velma.heading=angLerp(velma.heading,Math.atan2(mx,mz),Math.min(1,dt*12));
+    velma.moving=Math.min(1,velma.moving+dt*6);
+  } else velma.moving=Math.max(0,velma.moving-dt*5);
+  velma.g.rotation.y=velma.heading;
+
+  const h=velma.heading; const lp=louise.g.position;
+  const tx=vp.x+Math.cos(h)*1.15-Math.sin(h)*0.15, tz=vp.z-Math.sin(h)*1.15-Math.cos(h)*0.15;
+  const ox=lp.x, oz=lp.z;
+  if(Math.hypot(tx-lp.x,tz-lp.z)>5){ lp.x=tx; lp.z=tz; }
+  lp.x+=(tx-lp.x)*Math.min(1,dt*7); lp.z+=(tz-lp.z)*Math.min(1,dt*7); resolve(lp,0.5);
+  const lmove=Math.hypot(lp.x-ox,lp.z-oz)/Math.max(dt,1e-4);
+  louise.moving = lmove>0.5 ? Math.min(1,louise.moving+dt*6) : Math.max(0,louise.moving-dt*5);
+  louise.heading=angLerp(louise.heading, lmove>0.5?Math.atan2(lp.x-ox,lp.z-oz):velma.heading, Math.min(1,dt*8));
+  louise.g.rotation.y=louise.heading;
+
+  [velma,louise].forEach((r,i)=>{
+    r.body.position.y=Math.abs(Math.sin(t*16+i))*0.06*r.moving + Math.sin(t*2+i)*0.01;
+    r.body.rotation.x=Math.sin(t*16+i)*0.04*r.moving;
+    r.tail.rotation.y=Math.sin(t*(r.moving>0.2?11:2.5)+i)*0.35;
+  });
+
+  // crumbs
+  for(const c of crumbs){
+    if(c.taken) continue;
+    c.m.rotation.y+=dt*2; c.m.position.y=0.35+Math.sin(t*3+c.x)*0.08;
+    if(!game.paused && Math.hypot(vp.x-c.x,vp.z-c.z)<1.1){ c.taken=true; c.m.visible=false; game.cheese++; sfx('crumb'); updateDots(); writeSave(); const j=pick(JOKES); say(j[0],j[1],5200); }
+  }
+  // puzzles
+  nearPuzzle=null; let best=2.7;
+  for(const p of puzzles){
+    if(!p.solved){ const s=1+Math.sin(t*3)*0.07; p.ring.scale.set(s,s,s); p.ring.material.opacity=0.65+Math.sin(t*3)*0.25; p.gem.rotation.y+=dt*1.6; p.gem.position.y=3+Math.sin(t*2+p.x)*0.25; }
+    const d=Math.hypot(vp.x-p.x,vp.z-p.z); if(!p.solved && d<best){ best=d; nearPuzzle=p; }
+  }
+  if(!game.paused && nearPuzzle){ if(actBtn.hidden || actBtn.dataset.id!==nearPuzzle.def.id){ actBtn.dataset.id=nearPuzzle.def.id; actBtn.innerHTML=`Investigate: ${nearPuzzle.def.name}<small>tap here, or press E</small>`; } actBtn.hidden=false; }
+  else actBtn.hidden=true;
+  // door
+  if(door){
+    const target=door.open?1:0; door.glow.material.opacity+=(target*(0.75+Math.sin(t*4)*0.25)-door.glow.material.opacity)*Math.min(1,dt*4);
+    door.light.intensity=door.glow.material.opacity*1.6;
+    if(door.open && !game.paused && Math.hypot(vp.x-door.x,vp.z-door.z)<1.3) nextRoom();
+  }
+  // cat snores
+  catZs.forEach(z=>{ const k=(t*0.45+z.phase)%1; z.s.position.set(z.x+k*0.8,1.3+k*1.6,z.z); z.s.material.opacity=Math.sin(k*Math.PI); const sc=0.3+k*0.4; z.s.scale.set(sc,sc,sc); });
+
+  // camera
+  const portrait=camera.aspect<0.8;
+  const off= portrait? [5,15,14] : [6.5,11.5,12.5];
+  const look=new THREE.Vector3(vp.x*0.85,0.5,vp.z*0.8+ (portrait?-1:0));
+  camPos.set(look.x+off[0],off[1],look.z+off[2]);
+  if(!camInit){ camera.position.copy(camPos); camInit=true; } else camera.position.lerp(camPos,Math.min(1,dt*3));
+  camera.lookAt(look);
+  renderer.render(scene,camera);
+  placeTag($('tagV'),velma); placeTag($('tagL'),louise);
+  requestAnimationFrame(tick);
+}
+
+// Title backdrop: kitchen preview
+loadLevel(0,true); game.paused=true;
+if(!('ontouchstart' in window)) $('tapHint').textContent='Arrow keys or WASD to walk · or click the floor';
+requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>
