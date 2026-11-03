@@ -7,7 +7,7 @@ Built by Stuart (a dad who works in education and edtech) with Claude.
 ## Play it
 
 - **Easiest:** open `velma-and-louise-house-of-x.html` in any modern browser. It is one self-contained file; the only things it loads from the internet are Three.js and the fonts.
-- **Online:** once GitHub Pages is switched on (see *Publishing* below), the game lives at `https://stuart-gray.github.io/Math-Rats/`.
+- **Online:** https://stuart-gray.github.io/Math-Rats/ (GitHub Pages, rebuilt on every push to `main`).
 
 Controls:
 
@@ -100,7 +100,7 @@ scripts/                puzzle checker and build helper
 
 **Recommended: GitHub Pages.** It's free, fast, and works on laptops, Chromebooks, iPads and iPhones. The workflow in `.github/workflows/pages.yml` builds and deploys on every push to `main`.
 
-One catch: GitHub Pages on a **private** repo needs a paid GitHub plan. The free route is to make the repo public (Settings → General → Danger Zone → Change visibility), then Settings → Pages → Source: **GitHub Actions**. Nothing in the repo is secret, and progress is saved on each player's own device, not in the repo.
+The repo is public so Pages is free. Pages must be set to Settings → Pages → Source: **GitHub Actions**. Nothing in the repo is secret, and progress is saved on each player's own device, not in the repo.
 
 Alternatives if the repo should stay private: Netlify or Cloudflare Pages (both free, connect to a private repo), or embed the single HTML file in a Google Site with an "Embed code" block (works, but the game runs in a small frame).
 

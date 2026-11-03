@@ -66,7 +66,25 @@ export function shell(theme) {
   const back = mesh(new THREE.PlaneGeometry(W, 9), wm, { cast: false }); back.position.set(0, 4.5, -D / 2); room.add(back);
   const left = mesh(new THREE.PlaneGeometry(D, 9), wm, { cast: false }); left.rotation.y = Math.PI / 2; left.position.set(-W / 2, 4.5, 0); room.add(left);
   box(W, 0.5, 0.15, 0, 0, -D / 2 + 0.07, theme.trim, { collide: false }); box(0.15, 0.5, D, -W / 2 + 0.07, 0, 0, theme.trim, { collide: false });
+  dollhouse(theme, w1, f3 || f2);
   return floor;
+}
+
+/* The room is shown like a dollhouse cutaway: low cut walls on the near sides, a thick floor slab,
+   and the whole room sitting on a soft surface that fades into the background, so there is no empty void. */
+function dollhouse(theme, wallColor, floorEdge) {
+  const T = 0.3, cutH = 0.8, slab = 0.7, cap = theme.trim;
+  box(T, cutH, D + T, W / 2 + T / 2, 0, T / 2, wallColor, { collide: false });                 // right cut wall
+  box(W + 2 * T, cutH, T, 0, 0, D / 2 + T / 2, wallColor, { collide: false });      // front cut wall
+  box(T + 0.08, 0.1, D + T + 0.08, W / 2 + T / 2, cutH, T / 2, cap, { collide: false });        // caps
+  box(W + 2 * T + 0.08, 0.1, T + 0.08, 0, cutH, D / 2 + T / 2, cap, { collide: false });
+  box(0.4, 9, 0.4, -W / 2 - 0.05, 0, -D / 2 - 0.05, cap, { collide: false });                   // back corner post
+  const s = box(W + 2 * T, slab, D + 2 * T, 0, -slab - 0.03, 0, floorEdge, { collide: false }); s.castShadow = false;
+  const out = theme.out ?? 0xd8c3a5;
+  const ground = mesh(new THREE.CircleGeometry(120, 48), mat(out, { roughness: 1 }), { cast: false });
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -slab - 0.01; room.add(ground);
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(W + 3, D + 3), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }));
+  sh.rotation.x = -Math.PI / 2; sh.position.set(0.6, -slab + 0.005, 0.8); room.add(sh);           // soft contact shadow
 }
 
 /* The mouse hole to the next room. */

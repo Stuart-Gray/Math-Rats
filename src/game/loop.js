@@ -217,7 +217,8 @@ function tick() {
   // camera
   const portrait = camera.aspect < 0.8;
   const off = portrait ? [5, 15, 14] : [6.5, 11.5, 12.5];
-  look.set(vp.x * 0.85, 0.5, vp.z * 0.8 + (portrait ? -1 : 0));
+  // keep the room filling the screen: the view drifts with the rats but stops short of the edges
+  look.set(Math.max(-W / 2 + 6, Math.min(W / 2 - 6, vp.x * 0.85)), 0.5, Math.max(-D / 2 + 3, Math.min(D / 2 - 3.5, vp.z * 0.8)) + (portrait ? -1 : 0));
   camPos.set(look.x + off[0], off[1], look.z + off[2]);
   if (!camInit) { camera.position.copy(camPos); camInit = true; } else camera.position.lerp(camPos, Math.min(1, dt * 3));
   camera.lookAt(look);

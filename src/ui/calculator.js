@@ -67,6 +67,10 @@ export function toggleCalculator(open, useCb) {
   const el = $('calc'); const on = open ?? el.hidden;
   if (useCb) onUse = useCb;
   el.hidden = !on; $('calcBtn').setAttribute('aria-expanded', String(on));
-  if (on) { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  if (on) {
+    el.querySelector('.ck').focus({ preventScroll: true });
+    // phones: the calculator floats at the top, so bring the equation and working into view below it
+    if (window.innerWidth < 900) document.querySelector('#sheet .eqbox').scrollIntoView({ block: 'start' });
+  }
 }
 export function resetCalculator() { acc = null; op = null; entry = ''; last = ''; fresh = false; if ($('calcOut')) render(); }
