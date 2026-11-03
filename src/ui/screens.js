@@ -6,8 +6,12 @@ import { game, world } from '../game/state.js';
 import { audio, sfx } from '../audio/audio.js';
 
 const OVERLAYS = ['titleScreen', 'sheet', 'recipe', 'settings', 'parent', 'victory', 'jokebook'];
-export function syncPause() { game.paused = !game.started || OVERLAYS.some(id => !$(id).hidden); }
-export const anyOverlay = () => OVERLAYS.filter(id => id !== 'titleScreen' && id !== 'victory').find(id => !$(id).hidden);
+export function syncPause() { game.paused = !game.started || !!game.transition || OVERLAYS.some(id => !$(id).hidden); }
+/* The topmost open menu: overlays that can sit on top of the puzzle sheet are checked first,
+   so Escape closes the recipe card and returns to the puzzle. */
+const TOP_FIRST = ['recipe', 'settings', 'parent', 'jokebook', 'sheet'];
+export const anyOverlay = () => TOP_FIRST.find(id => !$(id).hidden);
+export const topOverlay = () => ['victory', ...TOP_FIRST, 'titleScreen'].find(id => !$(id).hidden);
 
 export function updateHud() {
   const d = $('dots'); d.innerHTML = '';

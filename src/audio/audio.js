@@ -58,7 +58,7 @@ export const audio = {
   apply() {
     if (!this.ctx) return; const t = this.ctx.currentTime;
     this.mus.gain.setTargetAtTime(settings.music ? 0.32 * settings.vol : 0, t, 0.4);
-    this.fx.gain.setTargetAtTime(settings.sfx ? 0.45 * Math.max(0.3, settings.vol * 1.4) : 0, t, 0.05);
+    this.fx.gain.setTargetAtTime(settings.sfx && settings.vol > 0 ? 0.45 * Math.max(0.3, Math.min(1, settings.vol * 1.4)) : 0, t, 0.05);
     if (settings.music && !this.timer) { this.next = Math.max(this.next, t + 0.1); this.timer = setInterval(() => this.schedule(), 250); }
     if (!settings.music && this.timer) { clearInterval(this.timer); this.timer = null; }
   },

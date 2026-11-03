@@ -9,7 +9,7 @@ import { velma, louise } from '../rats/index.js';
 import { saveRun } from '../progress/storage.js';
 import { sfx } from '../audio/audio.js';
 import { say, updateSpeech } from '../ui/speech.js';
-import { updateHud, anyOverlay, hideRecipe, closeSettings, closeParent, closeJokes } from '../ui/screens.js';
+import { updateHud, anyOverlay, topOverlay, hideRecipe, closeSettings, closeParent, closeJokes } from '../ui/screens.js';
 import { openPuzzle, closePuzzle, puzzleOpen } from '../ui/puzzle.js';
 import { drawJoke, nextRoom } from './flow.js';
 
@@ -58,12 +58,22 @@ function floorHit(e) {
   if (world.door && world.door.open && Math.hypot(pt.x - world.door.x, pt.z - (-D / 2)) < 2) return { x: world.door.x, z: world.door.z, door: true };
   return { x: pt.x, z: pt.z };
 }
+/* Keep Tab inside the open menu or puzzle, so keyboard players don't wander onto the game behind it. */
+function trapFocus(e) {
+  const id = topOverlay(); if (!id) return;
+  const box = $(id), f = [...box.querySelectorAll('button, input, select, [href], [tabindex]:not([tabindex="-1"])')].filter(n => !n.disabled && n.offsetParent !== null);
+  if (!f.length) return;
+  const i = f.indexOf(document.activeElement);
+  if (i < 0 || (e.shiftKey && i === 0) || (!e.shiftKey && i === f.length - 1)) { e.preventDefault(); f[e.shiftKey ? f.length - 1 : 0].focus(); }
+}
 export function setupInput() {
   window.addEventListener('keydown', e => {
     if (e.target && (e.target.tagName === 'INPUT' || e.target.closest('#calc'))) { if (e.key !== 'Escape') return; }
     const k = e.key.toLowerCase();
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { if (!game.paused) { keys.add(k); stopWalking(); e.preventDefault(); } }
-    if ((k === 'e' || k === ' ' || k === 'enter') && !game.paused && nearPuzzle) { e.preventDefault(); openPuzzle(nearPuzzle); }
+    const onGame = e.target === canvas || e.target === document.body;
+    if ((k === 'e' || ((k === ' ' || k === 'enter') && onGame)) && !game.paused && nearPuzzle) { e.preventDefault(); openPuzzle(nearPuzzle); }
+    if (k === 'tab') trapFocus(e);
     if (k === 'g' && !game.paused) guide();
     if (k === 'escape') {
       const o = anyOverlay();

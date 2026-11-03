@@ -99,6 +99,14 @@ export function makeCrumb(x, z) {
 export function heightAt(x, z) { let h = 0; for (const r of world.ramps) { const v = r(x, z); if (v != null && v > h) h = v; } return h; }
 
 export function clearRoom() {
-  while (room.children.length) { const o = room.children.pop(); o.traverse(n => { if (n.geometry) n.geometry.dispose(); }); }
+  const mats = new Set(), maps = new Set();
+  while (room.children.length) {
+    const o = room.children.pop();
+    o.traverse(n => {
+      if (n.geometry) n.geometry.dispose();
+      [].concat(n.material || []).forEach(m => { mats.add(m); if (m.map) maps.add(m.map); });
+    });
+  }
+  maps.forEach(t => t.dispose()); mats.forEach(m => m.dispose()); // free GPU memory between rooms (phones)
   world.cols = []; world.ramps = []; world.fades = []; world.anim = []; world.catZs = []; world.lap = null;
 }

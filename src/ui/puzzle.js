@@ -113,7 +113,7 @@ function renderControls() {
     wireAnswer(v => {
       if (v === null) { setFb('oops', blankMsg); return; }
       if (v === d.x) { if (d.x < 0) game.negTaught = true; solved(true); }
-      else if (v === -d.x && d.x !== 0) { sfx('oops'); setFb('oops', `${who('l')} ${signFlipMsg(d.x)}`); $('ansInput').focus(); }
+      else if (v === -d.x && d.x !== 0) { cur.numErr++; sfx('oops'); setFb('oops', `${who('l')} ${signFlipMsg(d.x)}`); $('ansInput').focus(); }
       else { cur.headMiss = true; sfx('oops'); setFb('oops', `${who('v')} Hmm, not quite! No worries, let's work through it together.`); cur.stage = 'op'; renderControls(); }
     });
     $('toSteps').onclick = () => { cur.stage = 'op'; setFb('', ''); renderControls(); };

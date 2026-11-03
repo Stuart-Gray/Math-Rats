@@ -24,6 +24,7 @@ function render() {
   $('calcExpr').textContent = acc === null ? last : `${show(acc)} ${op || ''}`;
   $('calcOut').textContent = e || show(acc);
 }
+function divZero() { acc = null; op = null; entry = ''; last = ''; fresh = false; $('calcExpr').textContent = 'Nobody can share into 0 piles!'; $('calcOut').textContent = 'Oops'; }
 function press(k) {
   sfx('key'); onUse();
   if (/\d/.test(k)) { if (fresh) { entry = ''; fresh = false; } if (entry.replace('-', '').length < 7) entry = (entry === '0' ? '' : entry === '-0' ? '-' : entry) + k; }
@@ -34,11 +35,15 @@ function press(k) {
     if (op !== null && acc !== null) {
       const b = num(entry), r = calc(acc, op, b);
       last = `${show(acc)} ${op} ${show(b)} =`;
-      if (!Number.isFinite(r)) { $('calcExpr').textContent = 'Nobody can share into 0 piles!'; acc = null; op = null; entry = ''; $('calcOut').textContent = 'Oops'; return; }
+      if (!Number.isFinite(r)) { divZero(); return; }
       entry = String(Math.round(r * 10000) / 10000); acc = null; op = null; fresh = true;
     }
   } else { // + − × ÷
-    if (acc !== null && op !== null && entry !== '' && !fresh) { const r = calc(acc, op, num(entry)); acc = Number.isFinite(r) ? r : 0; }
+    if (acc !== null && op !== null && entry !== '' && !fresh) {
+      const r = calc(acc, op, num(entry));
+      if (!Number.isFinite(r)) { divZero(); return; }
+      acc = r;
+    }
     else if (entry !== '' || acc === null) acc = num(entry);
     op = k; entry = ''; fresh = false; last = '';
   }

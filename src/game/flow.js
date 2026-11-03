@@ -41,7 +41,7 @@ export function loadLevel(r, silent) {
   stopWalking();
   $('roomNum').textContent = `Room ${r + 1} of ${ROOMS.length}`; $('roomName').textContent = R.name;
   buildDeck(R);
-  updateHud(); saveRun(game);
+  updateHud(); if (!silent) saveRun(game); // the title-screen preview must not overwrite a saved run
   newScene();
   if (!silent) { R.intro.forEach(l => say(l[0], l[1])); if (r === 0 && !('ontouchstart' in window)) say('n', 'Walk with the arrow keys or WASD, or click anywhere on the floor. Click a glowing ring and Velma runs straight to it.'); }
 }
@@ -54,16 +54,16 @@ export function begin(level, cheese, head, jokes) {
 }
 
 export function nextRoom() {
-  game.paused = true; const f = $('fade'); sfx('door');
+  game.transition = true; game.paused = true; const f = $('fade'); sfx('door');
   const last = game.level >= ROOMS.length - 1;
   $('fadeText').innerHTML = last ? '' : `<span class="k">Room ${game.level + 2} of ${ROOMS.length}</span><b>${ROOMS[game.level + 1].name}</b>`;
   f.classList.add('on');
   setTimeout(() => {
     if (last) {
       f.classList.remove('on'); $('vCheese').textContent = game.cheese; $('vHead').textContent = game.head; $('vJokes').textContent = game.jokesFound.length;
-      $('vPuzzles').textContent = ROOMS.length * 3; $('victory').hidden = false; syncPause(); clearRun(); return;
+      $('vPuzzles').textContent = ROOMS.length * 3; $('victory').hidden = false; game.transition = false; syncPause(); clearRun(); return;
     }
     loadLevel(game.level + 1); audio.newSong();
-    setTimeout(() => { f.classList.remove('on'); syncPause(); }, 900);
+    setTimeout(() => { f.classList.remove('on'); game.transition = false; syncPause(); }, 900);
   }, 500);
 }
