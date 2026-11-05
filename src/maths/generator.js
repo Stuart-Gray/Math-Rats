@@ -98,12 +98,14 @@ export function genProblem(type,lvl,force){
   }
   return {type,cat:CAT_OF[type],lvl,a,b,c,x,eq,steps,L,check};
 }
-export function makeProblem(type,lvl,force){
+export function makeProblem(type,lvl,force,allowNeg=true){
   // Easy and Medium never use negatives (unless the room forces it, like the attic thermometer).
+  // With the "Include negative integers" setting off, Hard and Expert don't either.
   // Every answer and every intermediate step must be a whole number.
-  for(let i=0;i<200;i++){
+  const noNeg = !force && (lvl<3 || !allowNeg);
+  for(let i=0;i<400;i++){
     const p=genProblem(type,lvl,force);
-    if(lvl<3 && !force && hasNegative(p)) continue;
+    if(noNeg && hasNegative(p)) continue;
     if(force && p.x>=0) continue;
     if(p.steps.every(s=>Number.isInteger(s.ans)) && Number.isInteger(p.c) && p.steps[p.steps.length-1].ans===p.x) return p;
   }
