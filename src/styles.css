@@ -250,3 +250,20 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--honey);outline-
 .song button{background:var(--paper-2);color:var(--ink);font-weight:700;font-size:14px;border-radius:10px;padding:7px 11px}
 @media (prefers-reduced-motion:reduce){.guide.glow{animation:none}.answer input.flip{animation:none}}
 @media (max-width:480px){.guide{font-size:13px;padding:8px 11px}.hud-right .btn-soft{font-size:12px}}
+
+/* ---------- Version 6: the rats' own speech bubbles ---------- */
+.rat-talk{position:fixed;inset:0;pointer-events:none;z-index:5}
+.rb{position:absolute;left:0;top:0;max-width:min(270px,calc(100vw - 32px));padding:7px 12px 9px;border-radius:16px;
+  background:rgba(255,250,240,.82);color:var(--ink);font-size:15px;line-height:1.35;pointer-events:auto;cursor:pointer;
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);box-shadow:0 3px 10px rgba(0,0,0,.18),inset 0 0 0 2px rgba(58,36,56,.18);
+  opacity:0;transition:opacity .22s}
+.rb.in{opacity:1;animation:rbpop .26s ease-out}
+.rb.bye{opacity:0}
+.rb-name{display:block;font-family:var(--font-display);font-weight:900;font-size:12px;opacity:.7;margin-bottom:1px}
+.rb.v .rb-name{color:#5a3a52}
+.rb-tail{position:absolute;bottom:-11px;left:var(--tail,50%);transform:translateX(-50%);width:0;height:0;
+  border-left:10px solid transparent;border-right:10px solid transparent;border-top:12px solid rgba(255,250,240,.82)}
+.tag.hush{opacity:0}
+.tag{transition:opacity .2s}
+@keyframes rbpop{from{opacity:0;scale:.85}}
+@media (prefers-reduced-motion:reduce){.rb.in{animation:none}}

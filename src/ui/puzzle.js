@@ -203,8 +203,8 @@ function afterSolve() {
   if (last && SOLVE_LINES[last.def.id]) SOLVE_LINES[last.def.id].forEach(l => say(l[0], l[1]));
   if (last && last.def.id === 'tub') sfx('squeak');
   const lv = game.lastLv;
-  if (lv && lv.dir === 'up') { sfx('level'); say('l', `Level up on ${CAT_NAMES[lv.cat].toLowerCase()} puzzles! The numbers get a little bigger now.`); }
-  if (lv && lv.dir === 'down') say('v', `Let's make the next ${CAT_NAMES[lv.cat].toLowerCase()} puzzles a bit friendlier. Warm-up time!`);
+  if (lv && lv.dir === 'up') { sfx('level'); say('l', `Level up on ${CAT_NAMES[lv.cat].toLowerCase()} puzzles! The numbers get a little bigger now.`, { game: true }); }
+  if (lv && lv.dir === 'down') say('v', `Let's make the next ${CAT_NAMES[lv.cat].toLowerCase()} puzzles a bit friendlier. Warm-up time!`, { game: true });
   game.lastLv = null;
   const door = world.door;
   if (game.solved >= 3 && !door.open) {

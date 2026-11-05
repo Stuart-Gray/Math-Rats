@@ -15,7 +15,7 @@ A 3D browser algebra game for Stuart's daughter (grade 7). Her pet rats Velma an
 
 ## Module map
 - `src/maths/` generator, hints, formatting. Pure, no DOM. `npm test` imports it.
-- `src/rooms/data.js` story text, puzzle spots, crumbs, jokes per room. `furnish.js` builds each room's 3D props. `world.js` renderer, camera, building blocks, ramps (raised floor), collision boxes.
+- `src/rooms/data.js` story text, puzzle spots, crumbs, jokes per room. `furnish.js` builds each room's 3D props; `decor.js` adds wall art (canvas-drawn pictures), the maths clock and small animated props per room (walls only, never in walking paths). `world.js` renderer, camera, building blocks, ramps (raised floor), collision boxes.
 - `src/rats/` Velma, Louise, Sir Whiskerton. `src/audio/` music and SFX.
 - `src/ui/` puzzle sheet, working layout, calculator, speech bubble queue, menus/report.
 - `src/progress/` localStorage, settings, stats, adaptive levels. `src/game/` shared state, loop, pathfinding, room flow.
@@ -39,7 +39,8 @@ A 3D browser algebra game for Stuart's daughter (grade 7). Her pet rats Velma an
 - Music and SFX on, volume adjustable. A different tune each run and room.
 - One-step and two-step on; three-step and both-sides off. Calculator available in step-by-step mode.
 - Adaptive difficulty on: per-type levels; two quick clean solves in a row → up; 2+ slips or hints → down.
-- Speech bubbles: queue (max 2 on screen), time based on length, pause while menus/puzzles are open, × to close.
+- Speech: the bottom bar is for gameplay messages only (`say('n', …)` or `{ game: true }`), one at a time. Velma and Louise's jokes and chatter show as see-through bubbles above the speaking rat, one at a time, queued; `minor` chatter is skipped when busy. Timing based on length, paused while menus/puzzles are open; × or tap to close.
+- Rats idle with blinks, ear flicks, whisker twitches and breathing (`idleLife` in `rat.js`).
 
 ## Characters and tone
 - Velma and Louise travel side by side, Louise at Velma's side. Chocolate brown, cupped pink ears, fawn muzzle, pink nose, glossy black eyes, long whiskers, thick scaly tails. Louise is lighter with a broad white belly; Velma has a thin white chest stripe.
