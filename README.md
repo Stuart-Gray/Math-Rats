@@ -58,7 +58,7 @@ Equations are woven into objects in each room. Cheese crumbs reveal rat jokes an
 - Speech bubbles stay long enough to read (longer for longer jokes), queue up instead of replacing each other, pause while a puzzle is open, and have an × to close them. Settings can make them stay extra long or until closed.
 - **Adaptive difficulty** (default): each puzzle type has its own level. Two quick, clean solves in a row move it up; a puzzle with 2+ slips or hints moves it down.
 - With adaptive off, pick a fixed level: Easy, Medium, Hard or Expert.
-- Easy and Medium never use negative numbers.
+- Easy and Medium never use negative numbers. Hard and Expert use them only when **Include negative integers** is on (the default). The attic thermometer is always below zero.
 
 ## Grown-ups' progress report
 

@@ -7,7 +7,7 @@ import { loadRun } from './progress/storage.js';
 import { setupScreens } from './ui/screens.js';
 import { setupPuzzle, debugCur } from './ui/puzzle.js';
 import { setupCalculator } from './ui/calculator.js';
-import { setupInput, startLoop } from './game/loop.js';
+import { setupInput, startLoop, walkTo } from './game/loop.js';
 import { loadLevel, begin } from './game/flow.js';
 
 setupScreens(); setupPuzzle(); setupCalculator(); setupInput();
@@ -25,7 +25,7 @@ $('startBtn').addEventListener('click', () => begin(0, 0, 0, []));
 $('againBtn').addEventListener('click', () => { $('victory').hidden = true; begin(0, 0, 0, []); });
 
 // test hook for automated playtests: open the game with #debug
-if (location.hash === '#debug') window.__mr = { cur: debugCur, game, world };
+if (location.hash === '#debug') window.__mr = { cur: debugCur, game, world, begin, walkTo };
 
 // title backdrop: kitchen preview
 loadLevel(0, true); game.paused = true;

@@ -5,7 +5,7 @@ import { $, pick } from '../lib/util.js';
 import { game, world } from './state.js';
 import { W, D, scene, camera, renderer, canvas, heightAt } from '../rooms/world.js';
 import { findPath } from './nav.js';
-import { velma, louise } from '../rats/index.js';
+import { velma, louise, animateRat } from '../rats/index.js';
 import { saveRun } from '../progress/storage.js';
 import { sfx } from '../audio/audio.js';
 import { say, updateSpeech } from '../ui/speech.js';
@@ -23,7 +23,7 @@ mark.rotation.x = -Math.PI / 2; mark.visible = false; scene.add(mark);
 
 export function stopWalking() { path = []; goal = null; mark.visible = false; }
 /* Walk to (x, z). opts.puzzle opens that puzzle on arrival; opts.door walks into the mouse hole. */
-function walkTo(x, z, opts = {}) {
+export function walkTo(x, z, opts = {}) {
   const vp = velma.g.position;
   path = findPath(vp.x, vp.z, x, z); goal = opts; stuckT = 0;
   const end = path[path.length - 1];
@@ -107,6 +107,19 @@ function placeTag(el, rat) {
   el.style.transform = `translate(${(v3.x * 0.5 + 0.5) * window.innerWidth}px,${(-v3.y * 0.5 + 0.5) * window.innerHeight}px) translate(-50%,-100%)`;
 }
 function angLerp(a, b, t) { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * t; }
+/* Louise's place: at Velma's side. If that spot is inside furniture or at a different height
+   (Velma on the towel ramp, Louise beside it), she takes Velma's other side, or tucks in behind. */
+function blockedAt(x, z, r) {
+  if (x < -W / 2 + 0.7 || x > W / 2 - 0.7 || z < -D / 2 + 0.7 || z > D / 2 - 0.7) return true;
+  return world.cols.some(c => Math.max(Math.abs(x - c.x) - c.w / 2, 0) ** 2 + Math.max(Math.abs(z - c.z) - c.d / 2, 0) ** 2 < r * r);
+}
+let louiseSide = 1.15; // sticks to the side she's on, so she doesn't flip back and forth
+function louiseSpot(vp, h) {
+  const vh = heightAt(vp.x, vp.z), c = Math.cos(h), s = Math.sin(h);
+  const ok = (x, z) => !blockedAt(x, z, 0.45) && Math.abs(heightAt(x, z) - vh) < 0.35;
+  for (const side of [louiseSide, -louiseSide]) { const x = vp.x + c * side - s * 0.15, z = vp.z - s * side - c * 0.15; if (ok(x, z)) { louiseSide = side; return [x, z]; } }
+  return [vp.x - s * 1.1, vp.z - c * 1.1];
+}
 function resolve(p, r) {
   p.x = Math.max(-W / 2 + 0.7, Math.min(W / 2 - 0.7, p.x)); p.z = Math.max(-D / 2 + 0.7, Math.min(D / 2 - 0.7, p.z));
   for (const c of world.cols) {
@@ -157,7 +170,7 @@ function tick() {
 
   // Louise trots at Velma's side
   const h = velma.heading, lp = louise.g.position;
-  const tx = vp.x + Math.cos(h) * 1.15 - Math.sin(h) * 0.15, tz = vp.z - Math.sin(h) * 1.15 - Math.cos(h) * 0.15;
+  let [tx, tz] = louiseSpot(vp, h);
   const ox = lp.x, oz = lp.z;
   if (Math.hypot(tx - lp.x, tz - lp.z) > 5) { lp.x = tx; lp.z = tz; }
   lp.x += (tx - lp.x) * Math.min(1, dt * 7); lp.z += (tz - lp.z) * Math.min(1, dt * 7); resolve(lp, 0.5);
@@ -166,11 +179,7 @@ function tick() {
   louise.moving = lmove > 0.5 ? Math.min(1, louise.moving + dt * 6) : Math.max(0, louise.moving - dt * 5);
   louise.heading = angLerp(louise.heading, lmove > 0.5 ? Math.atan2(lp.x - ox, lp.z - oz) : velma.heading, Math.min(1, dt * 8));
   louise.g.rotation.y = louise.heading;
-  [velma, louise].forEach((r, i) => {
-    r.body.position.y = Math.abs(Math.sin(t * 16 + i)) * 0.06 * r.moving + Math.sin(t * 2 + i) * 0.01;
-    r.body.rotation.x = Math.sin(t * 16 + i) * 0.04 * r.moving;
-    r.tail.rotation.y = Math.sin(t * (r.moving > 0.2 ? 11 : 2.5) + i) * 0.35;
-  });
+  [velma, louise].forEach((r, i) => animateRat(r, dt, t, i));
 
   // cheese crumbs reveal jokes
   for (const c of world.crumbs) {

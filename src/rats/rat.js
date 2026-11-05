@@ -71,14 +71,30 @@ export function makeRat(isLouise){
     // eye
     const eye=mesh(new THREE.SphereGeometry(0.058,16,12),new THREE.MeshStandardMaterial({color:0x070405,roughness:0.06,metalness:0.1})); eye.position.set(0.172*s,0.585,0.70); body.add(eye);
     const shine=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); shine.position.set(0.19*s,0.61,0.73); body.add(shine);
-    // paws: pink, little fingers
-    [[0.27,0.28],[0.3,-0.62]].forEach(([px,pz],k)=>{
-      const paw=new THREE.Group(); const pm=new THREE.MeshStandardMaterial({color:0xe2aaa6,roughness:0.6});
-      const palm=mesh(new THREE.SphereGeometry(0.075,10,8),pm); palm.scale.set(1,0.45,1.3); paw.add(palm);
-      for(let f=0;f<4;f++){ const fg=mesh(new THREE.CylinderGeometry(0.014,0.012,0.09,5),pm); fg.rotation.x=Math.PI/2; fg.position.set((f-1.5)*0.035,0,0.1); fg.rotation.z=(f-1.5)*0.25; paw.add(fg); }
-      paw.position.set(px*s,0.04,pz); if(k===1) paw.scale.set(1.2,1,1.5); g.add(paw);
-    });
   });
+  // legs: furry limbs that start inside the body and end in pink paws on the floor,
+  // so the feet stay attached. Each leg swings from a hip/shoulder pivot (see animateRat).
+  const legMat=new THREE.MeshStandardMaterial({color:base.clone().lerp(fawn,0.3).lerp(white,isLouise?0.1:0.03),map:FUR.map,roughness:0.8});
+  const pawMat=new THREE.MeshStandardMaterial({color:0xe2aaa6,roughness:0.6});
+  const legs=[];
+  // [side x, pivot height, pivot z, floor x, front?]
+  [[0.19,0.30,0.30,0.25,true],[0.22,0.26,-0.56,0.29,false]].forEach(([hx,hy,hz,fx,front])=>[-1,1].forEach(s=>{
+    const leg=new THREE.Group(); leg.position.set(hx*s,hy,hz); g.add(leg);
+    const len=hy-0.04;
+    if(!front){ // haunch: the big rounded thigh that blends into the body
+      const thigh=mesh(new THREE.SphereGeometry(0.15,16,12),legMat); thigh.scale.set(0.75,1,1.15); thigh.position.set(0,-0.03,0.02); leg.add(thigh); }
+    const limb=mesh(new THREE.CylinderGeometry(front?0.065:0.075,0.042,len,10),legMat);
+    limb.position.set((fx-hx)*s*0.5,-len/2,front?0.02:-0.03); limb.rotation.z=(fx-hx)*s*1.6; leg.add(limb);
+    const paw=new THREE.Group(); paw.position.set((fx-hx)*s,-len,front?0.04:0.0); leg.add(paw);
+    const palm=mesh(new THREE.SphereGeometry(0.06,12,8),pawMat); palm.scale.set(1,0.5,front?1.25:1.9); palm.position.z=front?0.03:0.06; paw.add(palm);
+    const nToes=front?4:5;
+    for(let f=0;f<nToes;f++){ const sp=(f-(nToes-1)/2);
+      const toe=mesh(new THREE.CylinderGeometry(0.013,0.011,front?0.075:0.09,5),pawMat); toe.rotation.x=Math.PI/2; toe.rotation.z=sp*0.28;
+      toe.position.set(sp*0.026,-0.004,(front?0.1:0.16)+Math.cos(sp*0.6)*0.01); paw.add(toe);
+      const tip=mesh(new THREE.SphereGeometry(0.014,6,5),pawMat,{cast:false}); tip.position.set(sp*0.026+Math.sin(sp*0.28)*0.04,-0.004,toe.position.z+0.04); paw.add(tip); }
+    // trot: diagonal pairs move together (front-left with back-right)
+    legs.push({leg,paw,len,front,phase:(front===(s<0))?0:Math.PI});
+  }));
   // whiskers: long, fine, drooping
   const wp=[];
   [-1,1].forEach(s=>{ for(let k=0;k<7;k++){ const ox=0.06*s, oy=0.44+(k%3)*0.018, oz=0.93-(k%4)*0.025;
@@ -97,5 +113,23 @@ export function makeRat(isLouise){
   tail.add(mesh(tg,new THREE.MeshStandardMaterial({color:0xc29486,map:TAILTEX,roughness:0.55})));
   g.scale.setScalar(1.1);
   scene.add(g);
-  return {g,body,tail,heading:0,moving:0};
+  return {g,body,tail,legs,heading:0,moving:0,stride:0};
+}
+
+/* Walk cycle: a quick rat trot. The legs swing from the hip and shoulder, paws lift on the
+   way forward and press flat on the way back, and the body bobs twice per stride. */
+export function animateRat(r, dt, t, i) {
+  const m = r.moving;
+  r.stride += dt * (8 + 16 * m);
+  const ph = r.stride;
+  r.body.position.y = Math.abs(Math.sin(ph)) * 0.045 * m + Math.sin(t * 2 + i) * 0.01;
+  r.body.rotation.x = Math.sin(ph) * 0.035 * m;
+  r.tail.rotation.y = Math.sin(t * (m > 0.2 ? 11 : 2.5) + i) * 0.35;
+  for (const L of r.legs) {
+    const p = ph + L.phase, sw = Math.sin(p), lift = Math.max(0, Math.cos(p));
+    const amp = (L.front ? 0.55 : 0.5) * m;
+    L.leg.rotation.x = sw * amp;                       // swing forward and back
+    L.leg.position.y = L.len + 0.04 + lift * 0.05 * m; // lift the paw on the way forward
+    L.paw.rotation.x = -sw * amp - lift * 0.35 * m;    // keep the paw flat, toes up as it lifts
+  }
 }

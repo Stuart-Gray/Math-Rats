@@ -33,7 +33,7 @@ A 3D browser algebra game for Stuart's daughter (grade 7). Her pet rats Velma an
 - 3 operation choices per step with friendly wrong-answer explanations; arithmetic done mentally (the optional calculator is for checking, never fills the answer).
 - Hints escalate strategy → mental-math tricks. Every solve ends with a "check it" line.
 - **After changing the puzzle generator, run `npm test`: it checks every type at every level so all answers and intermediate steps are whole numbers.**
-- Easy and Medium never use negatives. The attic thermometer always goes below zero.
+- Easy and Medium never use negatives. "Include negative integers" (setting `negatives`, default on) gates them at Hard/Expert too. The attic thermometer always goes below zero, whatever the setting.
 
 ## Defaults (keep unless Stuart says otherwise)
 - Music and SFX on, volume adjustable. A different tune each run and room.

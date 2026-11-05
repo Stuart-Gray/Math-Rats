@@ -28,7 +28,7 @@ function chooseProblem(pz) {
   const lvl = levelFor(cat);
   const ts = CATS[cat].filter(t => t !== 'apar' || lvl >= 2 || cat !== 'two');
   const type = ts.includes(pz.def.pref) && Math.random() < 0.6 ? pz.def.pref : pick(ts);
-  return makeProblem(type, lvl, !!pz.def.forceNeg);
+  return makeProblem(type, lvl, !!pz.def.forceNeg, settings.negatives !== false);
 }
 
 export function openPuzzle(pz) {
@@ -69,7 +69,7 @@ function renderTiles() {
 }
 
 /* ---------- answer boxes, with clear help for negative numbers ---------- */
-const negPossible = () => cur.d.lvl >= 3 || cur.pz.def.forceNeg;
+const negPossible = () => (cur.d.lvl >= 3 && settings.negatives !== false) || cur.pz.def.forceNeg;
 const inputHTML = `<button class="pm" id="pmBtn" type="button" aria-label="Make the number negative or positive">+/−</button><input id="ansInput" inputmode="numeric" autocomplete="off" placeholder="?" aria-label="Your answer">`;
 function negTip(expected) {
   if (expected < 0 && !game.negTaught) return `<div class="negtip" role="note">${who('n')}<span><b>Answers can be below zero.</b> To type a negative number, type the number and then tap <b class="pmchip">+/−</b>. You can also type a minus sign first.</span></div>`;

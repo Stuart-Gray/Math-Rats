@@ -14,6 +14,7 @@ export const DEFAULTS = {
   types: { one: true, two: true, three: false, both: false },
   adaptive: true, level: 2,
   calc: true,          // on-screen calculator in step-by-step mode
+  negatives: true,     // include negative integers at Hard and Expert (Easy/Medium never use them)
   talk: 1,             // how long speech bubbles stay: 1 normal, 1.7 longer, 0 = until closed
   lastSong: -1,        // so the next run picks a different tune
 };

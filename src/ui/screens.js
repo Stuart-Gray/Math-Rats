@@ -38,11 +38,12 @@ export function closeJokes() { $('jokebook').hidden = true; syncPause(); }
 /* ---------- settings ---------- */
 const TYPE_IDS = { one: 'tOne', two: 'tTwo', three: 'tThree', both: 'tBoth' };
 let snapshot = '';
-const snap = () => JSON.stringify({ t: settings.types, a: settings.adaptive, l: settings.level });
+const snap = () => JSON.stringify({ t: settings.types, a: settings.adaptive, l: settings.level, n: settings.negatives });
 export function openSettings() {
   $('setMusic').checked = settings.music; $('setSfx').checked = settings.sfx; $('setVol').value = settings.vol;
   $('setCalc').checked = settings.calc;
   CAT_KEYS.forEach(k => $(TYPE_IDS[k]).checked = settings.types[k]);
+  $('setNeg').checked = settings.negatives !== false;
   $('setAdaptive').checked = settings.adaptive; renderSegs(); $('typeNote').textContent = '';
   $('songName').textContent = audio.song ? `Now playing: “${audio.song.name}”` : '';
   snapshot = snap();
@@ -111,6 +112,7 @@ export function setupScreens() {
     settings.types[k] = e.target.checked; $('typeNote').textContent = '';
   }));
   $('setAdaptive').addEventListener('change', e => { settings.adaptive = e.target.checked; renderSegs(); });
+  $('setNeg').addEventListener('change', e => { settings.negatives = e.target.checked; });
   $('levelSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { settings.level = +b.dataset.l; renderSegs(); }));
   $('talkSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { settings.talk = +b.dataset.t; renderSegs(); }));
   $('setDone').addEventListener('click', closeSettings);

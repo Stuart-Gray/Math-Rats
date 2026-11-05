@@ -73,7 +73,7 @@ function bathroom(R) {
   const bottle = mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.8, 14), mat(0xe58fb3, { roughness: 0.4 })); bottle.position.set(vx - 1.6, 0.4, vz - 0.5); room.add(bottle); addCol(vx - 1.6, vz - 0.5, 0.5, 0.5);
 
   // --- the bathtub, with a towel ramp so the rats can climb in and out ---
-  const tx0 = 3.2, tx1 = 10.8, tz0 = -8, tz1 = -4.0, th = 1.5, wall = 0.35, floorY = 0.25, gx0 = 5.3, gx1 = 7.5;
+  const tx0 = 3.2, tx1 = 10.8, tz0 = -8, tz1 = -4.0, th = 1.5, wall = 0.35, floorY = 0.25, gx0 = 4.6, gx1 = 8.2; // towel gap wide enough for both rats side by side
   const tub = 0xf7f4ef, tubOpts = { roughness: 0.25 };
   box(tx1 - tx0, floorY, tz1 - tz0, (tx0 + tx1) / 2, 0, (tz0 + tz1) / 2, tub, { collide: false, opts: tubOpts });
   box(wall, th, tz1 - tz0, tx0 + wall / 2, 0, (tz0 + tz1) / 2, tub, { opts: tubOpts });
@@ -90,7 +90,7 @@ function bathroom(R) {
   const slab = (z0, y0, z1, y1) => { const dz = z1 - z0, dy = y1 - y0, len = Math.hypot(dz, dy);
     const m = mesh(new THREE.BoxGeometry(gx1 - gx0 - 0.1, 0.1, len), mat(towel, { roughness: 1 })); m.position.set((gx0 + gx1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); m.rotation.x = Math.atan2(-dy, dz); room.add(m); };
   slab(outZ, 0.03, topZ0, top); slab(topZ0, top, topZ1, top); slab(topZ1, top, inZ, floorY + 0.03);
-  for (let i = 0; i < 5; i++) box(0.08, 0.02, 0.6, gx0 + 0.25 + i * 0.45, 0.02, outZ + 0.2, 0xffffff, { collide: false });
+  for (let i = 0; i < 8; i++) box(0.08, 0.02, 0.6, gx0 + 0.225 + i * 0.45, 0.02, outZ + 0.2, 0xffffff, { collide: false });
   world.ramps.push((x, z) => {
     if (x >= tx0 + wall && x <= tx1 - wall && z >= tz0 && z <= topZ1) {
       if (x >= gx0 && x <= gx1 && z > inZ) return floorY + (top - floorY) * (z - inZ) / (topZ1 - inZ);
