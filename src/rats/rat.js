@@ -126,7 +126,7 @@ export function animateRat(r, dt, t, i) {
   r.body.rotation.x = Math.sin(ph) * 0.035 * m;
   r.tail.rotation.y = Math.sin(t * (m > 0.2 ? 11 : 2.5) + i) * 0.35;
   for (const L of r.legs) {
-    const p = ph + L.phase, sw = Math.sin(p), lift = Math.max(0, Math.cos(p));
+    const p = ph + L.phase, sw = Math.sin(p), lift = Math.max(0, -Math.cos(p)); // +x rotation swings the paw back, so it moves forward while cos < 0
     const amp = (L.front ? 0.55 : 0.5) * m;
     L.leg.rotation.x = sw * amp;                       // swing forward and back
     L.leg.position.y = L.len + 0.04 + lift * 0.05 * m; // lift the paw on the way forward
