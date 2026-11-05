@@ -62,15 +62,16 @@ export function makeRat(isLouise){
   // ears: big, cupped, pink-beige
   const earOut=new THREE.MeshStandardMaterial({color:0xd8a39b,roughness:0.55,side:THREE.DoubleSide,emissive:0x3a1512,emissiveIntensity:0.35});
   const earIn=new THREE.MeshStandardMaterial({color:0xc98a86,roughness:0.6,side:THREE.DoubleSide});
+  const ears=[], eyes=[];
   [-1,1].forEach(s=>{
     const ear=new THREE.Group();
     const cup=mesh(new THREE.SphereGeometry(0.2,20,14,0,Math.PI*2,0,Math.PI*0.55),earOut); cup.scale.set(1,1.15,0.45); ear.add(cup);
     const inner=mesh(new THREE.SphereGeometry(0.17,18,12,0,Math.PI*2,0,Math.PI*0.5),earIn,{cast:false}); inner.scale.set(1,1.12,0.38); inner.position.z=0.015; ear.add(inner);
     ear.rotation.set(-Math.PI/2+0.35,0,0); ear.rotateOnWorldAxis(new THREE.Vector3(0,1,0),-0.55*s); ear.rotateOnWorldAxis(new THREE.Vector3(0,0,1),-0.45*s);
-    ear.position.set(0.19*s,0.73,0.43); body.add(ear);
+    const earPivot=new THREE.Group(); earPivot.position.set(0.19*s,0.73,0.43); earPivot.add(ear); body.add(earPivot); ears.push(earPivot);
     // eye
     const eye=mesh(new THREE.SphereGeometry(0.058,16,12),new THREE.MeshStandardMaterial({color:0x070405,roughness:0.06,metalness:0.1})); eye.position.set(0.172*s,0.585,0.70); body.add(eye);
-    const shine=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); shine.position.set(0.19*s,0.61,0.73); body.add(shine);
+    const shine=new THREE.Mesh(new THREE.SphereGeometry(0.014,8,6),new THREE.MeshBasicMaterial({color:0xffffff})); shine.position.set(0.19*s,0.61,0.73); body.add(shine); eyes.push({eye,shine});
   });
   // legs: furry limbs that start inside the body and end in pink paws on the floor,
   // so the feet stay attached. Each leg swings from a hip/shoulder pivot (see animateRat).
@@ -95,14 +96,17 @@ export function makeRat(isLouise){
     // trot: diagonal pairs move together (front-left with back-right)
     legs.push({leg,paw,len,front,phase:(front===(s<0))?0:Math.PI});
   }));
-  // whiskers: long, fine, drooping
-  const wp=[];
-  [-1,1].forEach(s=>{ for(let k=0;k<7;k++){ const ox=0.06*s, oy=0.44+(k%3)*0.018, oz=0.93-(k%4)*0.025;
+  // whiskers: long, fine, drooping. Each side hangs from a pivot at the nose so it can twitch.
+  const whiskMat=new THREE.LineBasicMaterial({color:0xe8e0d8,transparent:true,opacity:0.75}), whiskers=[];
+  [-1,1].forEach(s=>{ const wp=[], pv=new THREE.Vector3(0.06*s,0.46,0.93);
+    for(let k=0;k<7;k++){ const ox=0.06*s, oy=0.44+(k%3)*0.018, oz=0.93-(k%4)*0.025;
     const ang=-0.35+k*0.12, L=0.55+Math.random()*0.3;
     const mx=ox+Math.cos(ang)*L*0.5*s, mz=oz+Math.sin(ang)*L*0.5+0.1, my=oy+0.02;
     const ex=ox+Math.cos(ang)*L*s, ez=oz+Math.sin(ang)*L+0.12, ey=oy-0.06-k*0.008;
-    wp.push(new THREE.Vector3(ox,oy,oz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(ex,ey,ez)); } });
-  body.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(wp),new THREE.LineBasicMaterial({color:0xe8e0d8,transparent:true,opacity:0.75})));
+    wp.push(new THREE.Vector3(ox,oy,oz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(mx,my,mz),new THREE.Vector3(ex,ey,ez)); }
+    const side=new THREE.Group(); side.position.copy(pv); body.add(side);
+    side.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(wp.map(p=>p.sub(pv))),whiskMat));
+    whiskers.push({g:side,s}); });
   // tail: thick at the base, tapering, scaly
   const tail=new THREE.Group(); tail.position.set(0,0.36,-0.9); g.add(tail);
   const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(0,-0.22,-0.45),new THREE.Vector3(0.12,-0.32,-1.0),new THREE.Vector3(0.45,-0.33,-1.55),new THREE.Vector3(0.95,-0.33,-1.85)]);
@@ -113,7 +117,8 @@ export function makeRat(isLouise){
   tail.add(mesh(tg,new THREE.MeshStandardMaterial({color:0xc29486,map:TAILTEX,roughness:0.55})));
   g.scale.setScalar(1.1);
   scene.add(g);
-  return {g,body,tail,legs,heading:0,moving:0,stride:0};
+  const idle={blinkIn:1+Math.random()*3,blink:-1,ear:[{in:2+Math.random()*4,t:-1},{in:3+Math.random()*4,t:-1}],whisk:-1,whiskIn:1+Math.random()*2,breath:Math.random()*6};
+  return {g,body,tail,legs,ears,eyes,whiskers,idle,heading:0,moving:0,stride:0};
 }
 
 /* Walk cycle: a quick rat trot. The legs swing from the hip and shoulder, paws lift on the
@@ -122,7 +127,7 @@ export function animateRat(r, dt, t, i) {
   const m = r.moving;
   r.stride += dt * (8 + 16 * m);
   const ph = r.stride;
-  r.body.position.y = Math.abs(Math.sin(ph)) * 0.045 * m + Math.sin(t * 2 + i) * 0.01;
+  r.body.position.y = Math.abs(Math.sin(ph)) * 0.045 * m;
   r.body.rotation.x = Math.sin(ph) * 0.035 * m;
   r.tail.rotation.y = Math.sin(t * (m > 0.2 ? 11 : 2.5) + i) * 0.35;
   for (const L of r.legs) {
@@ -132,4 +137,37 @@ export function animateRat(r, dt, t, i) {
     L.leg.position.y = L.len + 0.04 + lift * 0.05 * m; // lift the paw on the way forward
     L.paw.rotation.x = -sw * amp - lift * 0.35 * m;    // keep the paw flat, toes up as it lifts
   }
+  idleLife(r, dt, 1 - m);
+}
+
+/* Little signs of life: blinks, ear flicks, whisker twitches and slow breathing.
+   Breathing and the twitches fade out while she runs (still = 1 standing, 0 running). */
+const rnd = (a, b) => a + Math.random() * (b - a);
+function idleLife(r, dt, still) {
+  const s = r.idle;
+  // breathing: a slow, gentle swell of the ribs, about 40 breaths a minute when resting
+  s.breath += dt * (4.2 + 3 * (1 - still));
+  const b = Math.sin(s.breath);
+  r.body.scale.set(1 + b * 0.014 * still, 1 + b * 0.02 * still, 1 - b * 0.004 * still);
+  r.body.position.y += b * 0.006 * still;
+  // blinks: every 2 to 6 seconds, sometimes a double blink
+  s.blinkIn -= dt;
+  if (s.blinkIn <= 0 && s.blink < 0) { s.blink = 0; s.blinkIn = Math.random() < 0.2 ? 0.35 : rnd(2, 6); }
+  let lid = 1;
+  if (s.blink >= 0) { s.blink += dt; const k = s.blink / 0.16; lid = k >= 1 ? 1 : Math.abs(1 - 2 * k); if (k >= 1) s.blink = -1; }
+  for (const e of r.eyes) { e.eye.scale.y = Math.max(0.1, lid); e.shine.visible = lid > 0.5; }
+  // ear flicks: one ear at a time, a quick twitch back and forth
+  r.ears.forEach((ear, k) => {
+    const E = s.ear[k]; E.in -= dt * (0.4 + still);
+    if (E.in <= 0 && E.t < 0) { E.t = 0; E.in = rnd(2.5, 7); }
+    let a = 0;
+    if (E.t >= 0) { E.t += dt; const k2 = E.t / 0.35; a = k2 >= 1 ? 0 : Math.sin(k2 * Math.PI * 2) * (1 - k2) * 0.4; if (k2 >= 1) E.t = -1; }
+    ear.rotation.z = a * (k ? -1 : 1); ear.rotation.x = -Math.abs(a) * 0.4;
+  });
+  // whiskers: a fast little sniff-and-whisk every second or two, plus a slow drift
+  s.whiskIn -= dt;
+  if (s.whiskIn <= 0 && s.whisk < 0) { s.whisk = 0; s.whiskIn = rnd(0.8, 3); }
+  let w = 0;
+  if (s.whisk >= 0) { s.whisk += dt; const k = s.whisk / 0.5; w = k >= 1 ? 0 : Math.sin(k * Math.PI * 4) * (1 - k) * 0.16; if (k >= 1) s.whisk = -1; }
+  for (const wh of r.whiskers) { wh.g.rotation.y = -wh.s * (w + Math.sin(s.breath * 0.5) * 0.03) * (0.4 + 0.6 * still); wh.g.rotation.x = w * 0.4; }
 }

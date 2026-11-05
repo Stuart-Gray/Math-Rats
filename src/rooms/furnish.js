@@ -6,6 +6,7 @@ import { room, mesh, mat, box, cyl, addCol, makeDoor, D } from './world.js';
 import { makeCat } from '../rats/cat.js';
 import { say } from '../ui/speech.js';
 import { sfx } from '../audio/audio.js';
+import { kitchenDecor, livingRoomDecor, bathroomDecor, atticDecor } from './decor.js';
 
 function kitchen(R) {
     box(9,3.4,2.2,3.5,0,-6.9,0x6d8fa3); box(9.4,0.3,2.4,3.5,3.4,-6.9,0xefe2c9,{collide:false});
@@ -163,9 +164,9 @@ function attic(R) {
     const bulb=mesh(new THREE.SphereGeometry(0.2,12,10),mat(0xd9363f)); bulb.position.set(5,0.55,-7.62); room.add(bulb);
     box(1.4,0.9,1.0,6,0,4,0xc77b9a); box(0.08,0.5,0.08,6.75,0.5,4,0xd8b24a,{collide:false});
     box(2,1.6,2,8.8,0,-3,0xb08a5a); box(1.6,1.2,1.6,8.8,1.6,-3,0xa47d4e,{collide:false}); box(2.2,1.8,2,-8.6,0,3,0xb08a5a); box(1.6,1,1.6,-8.4,1.8,3.1,0xc29a68,{collide:false});
-    const lantern=new THREE.PointLight(0xffb066,0.7,12); lantern.position.set(-2,3,0); room.add(lantern);
     makeDoor(R.door);
 }
 
 const BUILDERS = [kitchen, livingRoom, bathroom, attic];
-export function furnish(r, R) { BUILDERS[r](R); }
+const DECOR = [kitchenDecor, livingRoomDecor, bathroomDecor, atticDecor];
+export function furnish(r, R) { BUILDERS[r](R); DECOR[r](); }
