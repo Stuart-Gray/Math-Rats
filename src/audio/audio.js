@@ -127,6 +127,13 @@ export function sfx(name) {
   else if (name === 'pop') { T(500, 0.08, 0, { vol: 0.08, f2: 900 }); }
   else if (name === 'squeak') { T(1800, 0.09, 0, { vol: 0.07, f2: 2600 }); T(2200, 0.1, 0.11, { vol: 0.06, f2: 3000 }); }
   else if (name === 'zoom') { [0, 0.08, 0.16, 0.24].forEach((dt, i) => T(900 + i * 300, 0.1, dt, { vol: 0.08, type: 'triangle', f2: 1400 + i * 300 })); }
+  // cutscene sounds
+  else if (name === 'sniff') { [0, 0.13, 0.26].forEach(dt => audio.hiss(t + dt, 0.08, 0.05, 3500, audio.fx)); }
+  else if (name === 'creak') { T(190, 1.1, 0, { vol: 0.07, type: 'sawtooth', f2: 260, attack: 0.2 }); T(140, 0.9, 0.35, { vol: 0.05, type: 'triangle', f2: 210, attack: 0.15 }); }
+  else if (name === 'patter') { for (let k = 0; k < 6; k++) T(1400 + (k % 2) * 300, 0.04, k * 0.09, { vol: 0.05, type: 'triangle' }); }
+  else if (name === 'sparkle') { [1568, 2093, 2637, 3136, 2637, 3520].forEach((f, i) => T(f, 0.5, i * 0.09, { vol: 0.05 })); }
+  else if (name === 'crunch') { [0, 0.12, 0.22, 0.37].forEach(dt => { audio.hiss(t + dt, 0.07, 0.07, 1800, audio.fx); T(260, 0.05, dt, { vol: 0.04, type: 'square' }); }); }
+  else if (name === 'fanfare') { [[523, 0], [659, 0.15], [784, 0.3], [1047, 0.45], [784, 0.7], [1047, 0.85]].forEach(([f, dt]) => { T(f, dt > 0.8 ? 1.2 : 0.4, dt, { vol: 0.12, type: 'triangle' }); T(f / 2, dt > 0.8 ? 1.2 : 0.4, dt, { vol: 0.05 }); }); }
   else if (name === 'splash') { audio.hiss(t, 0.35, 0.06, 1500, audio.fx); T(400, 0.2, 0, { vol: 0.05, f2: 900 }); }
 }
 

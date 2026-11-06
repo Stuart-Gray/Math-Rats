@@ -18,6 +18,7 @@ A 3D browser algebra game for Stuart's daughter (grade 7). Her pet rats Velma an
 - `src/rooms/data.js` story text, puzzle spots, crumbs, jokes per room. `furnish.js` builds each room's 3D props; `decor.js` adds wall art (canvas-drawn pictures), the maths clock and small animated props per room (walls only, never in walking paths). `world.js` renderer, camera, building blocks, ramps (raised floor), collision boxes.
 - `src/rats/` Velma, Louise, Sir Whiskerton. `src/audio/` music and SFX.
 - `src/ui/` puzzle sheet, working layout, calculator, speech bubble queue, menus/report.
+- `src/game/cutscene.js` the intro (cage escape, `src/rooms/cage.js`) and ending (`src/rooms/stash.js`) cutscenes: keyframed rat tracks, camera shots, captions and sound cues, all derived from time t so skipping jumps to the end. Intro plays on every new run (not on Continue). `#debug` adds `__mr.seekCutscene(t)`.
 - `src/progress/` localStorage, settings, stats, adaptive levels. `src/game/` shared state, loop, pathfinding, room flow.
 - Shared mutable state lives on the `game` and `world` objects in `src/game/state.js`; never reassign them.
 

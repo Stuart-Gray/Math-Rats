@@ -6,6 +6,7 @@ import { room, mesh, mat, box, cyl, addCol, makeDoor, D } from './world.js';
 import { makeCat } from '../rats/cat.js';
 import { say } from '../ui/speech.js';
 import { sfx } from '../audio/audio.js';
+import { buildCage } from './cage.js';
 import { kitchenDecor, livingRoomDecor, bathroomDecor, atticDecor } from './decor.js';
 
 function kitchen(R) {
@@ -25,6 +26,7 @@ function kitchen(R) {
     const lid=mesh(new THREE.CylinderGeometry(0.6,0.6,0.15,24),mat(0xd9536f)); lid.position.set(6.5,1.58,-2.5); room.add(lid);
     box(1.6,1,1.2,7.5,0,4,0xb38654); box(1.2,0.8,0.7,7.5,1,4,0xc9ccd1,{collide:false,opts:{metalness:0.6,roughness:0.3}});
     [-0.2,0.2].forEach(dx=>box(0.12,0.35,0.5,7.5+dx,1.7,4,0xe0b070,{collide:false}));
+    buildCage();
     makeDoor(R.door);
 }
 

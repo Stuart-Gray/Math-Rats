@@ -19,13 +19,15 @@ Controls:
 
 ## The world
 
+A new run opens with a short 3D intro: Velma and Louise find their cage door unlatched, nudge it open and scurry down the ramp into the kitchen. Reaching the Snack Stash plays a matching ending. Both are skippable (tap, click or any key).
+
 One room per level:
 
-1. **Kitchen**: cookie jar on a scale, fridge magnets, toaster
+1. **Kitchen** (their cage is here): cookie jar on a scale, fridge magnets, toaster
 2. **Living Room**: Sir Whiskerton the sleeping cat (and his collar tag), the sock basket, the piano
 3. **Bathroom**: the drippy pipe under the vanity, the rubber duck fleet in the tub (climb in and out up the towel), and the toilet paper tower. Run a full lap around the toilet for a zoomies bonus.
 4. **Attic**: Grandma's trunk, the music box and the thermometer, which always goes below zero
-5. **The Legendary Snack Stash**
+5. **The Legendary Snack Stash**: a mountain of sunflower seeds, three whole crackers and one perfect blueberry
 
 Equations are woven into objects in each room. Cheese crumbs reveal rat jokes and puns, without repeats in a run.
 
@@ -86,12 +88,12 @@ index.html              page markup (HUD, puzzle sheet, menus)
 src/main.js             boots the game
 src/styles.css          all styles
 src/maths/              puzzle generator, hints, maths formatting (no DOM, tested by npm test)
-src/rooms/              room story data, 3D stage and furniture for each room
+src/rooms/              room story data, 3D stage and furniture for each room, the cage and the stash
 src/rats/               Velma, Louise and Sir Whiskerton
 src/audio/              synthesized music (with tune variety) and sound effects
 src/ui/                 puzzle sheet, working, calculator, speech bubbles, menus and reports
 src/progress/           saving, settings, stats and adaptive difficulty
-src/game/               shared state, game loop, tap-to-walk pathfinding, room flow
+src/game/               shared state, game loop, tap-to-walk pathfinding, room flow, cutscenes
 scripts/                puzzle checker and build helper
 .github/workflows/      GitHub Pages deploy and pull-request checks
 ```

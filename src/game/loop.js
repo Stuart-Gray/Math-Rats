@@ -12,6 +12,8 @@ import { say, updateSpeech, placeSpeech } from '../ui/speech.js';
 import { updateHud, anyOverlay, topOverlay, hideRecipe, closeSettings, closeParent, closeJokes } from '../ui/screens.js';
 import { openPuzzle, closePuzzle, puzzleOpen } from '../ui/puzzle.js';
 import { drawJoke, nextRoom } from './flow.js';
+import { gameCam } from './camera.js';
+import { cutsceneOn, cutTick } from './cutscene.js';
 
 const keys = new Set();
 let path = [], goal = null, pointerDown = false, lastDrag = 0, stuckT = 0, nearPuzzle = null;
@@ -137,6 +139,14 @@ function resolve(p, r) {
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   const vp = velma.g.position;
+  // a cutscene is playing: it moves the rats and the camera; the room keeps animating
+  if (cutsceneOn()) {
+    cutTick(dt);
+    [velma, louise].forEach((r, i) => animateRat(r, dt, t, i));
+    world.anim.forEach(f => f(t, dt, vp));
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick); return;
+  }
   let mx = 0, mz = 0;
   if (!game.paused) {
     if (keys.has('arrowup') || keys.has('w')) mz -= 1; if (keys.has('arrowdown') || keys.has('s')) mz += 1;
@@ -168,8 +178,9 @@ function tick() {
   velma.g.rotation.y = velma.heading;
   vp.y += (heightAt(vp.x, vp.z) - vp.y) * Math.min(1, dt * 14);
 
-  // Louise trots at Velma's side
+  // Louise trots at Velma's side (once the game has ended she stays where the ending left her)
   const h = velma.heading, lp = louise.g.position;
+  if (!game.ended) {
   let [tx, tz] = louiseSpot(vp, h);
   const ox = lp.x, oz = lp.z;
   if (Math.hypot(tx - lp.x, tz - lp.z) > 5) { lp.x = tx; lp.z = tz; }
@@ -179,6 +190,7 @@ function tick() {
   louise.moving = lmove > 0.5 ? Math.min(1, louise.moving + dt * 6) : Math.max(0, louise.moving - dt * 5);
   louise.heading = angLerp(louise.heading, lmove > 0.5 ? Math.atan2(lp.x - ox, lp.z - oz) : velma.heading, Math.min(1, dt * 8));
   louise.g.rotation.y = louise.heading;
+  }
   [velma, louise].forEach((r, i) => animateRat(r, dt, t, i));
 
   // cheese crumbs reveal jokes
@@ -224,11 +236,7 @@ function tick() {
   updateSpeech(dt * 1000, game.paused);
 
   // camera
-  const portrait = camera.aspect < 0.8;
-  const off = portrait ? [5, 15, 14] : [6.5, 11.5, 12.5];
-  // keep the room filling the screen: the view drifts with the rats but stops short of the edges
-  look.set(Math.max(-W / 2 + 6, Math.min(W / 2 - 6, vp.x * 0.85)), 1.2, Math.max(-D / 2 + 3, Math.min(D / 2 - 3.5, vp.z * 0.8)) + (portrait ? -1 : 0));
-  camPos.set(look.x + off[0], off[1], look.z + off[2]);
+  gameCam(vp, camPos, look);
   if (!camInit) { camera.position.copy(camPos); camInit = true; } else camera.position.lerp(camPos, Math.min(1, dt * 3));
   camera.lookAt(look);
   renderer.render(scene, camera);

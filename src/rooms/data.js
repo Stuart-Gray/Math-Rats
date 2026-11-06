@@ -35,7 +35,7 @@ export const ROOMS = [
     theme: { floor: ['#c98f57', '#c48a50', '#8d5b31'], wall: ['wallpaper', '#a9c7a8', '#9dbd9c', '#f3e4c4'], trim: 0xf4e6cc, bg: 0xd9c4a2, out: 0xa88a66 },
     intro: [['v', 'We made it to the kitchen. I can smell toast crumbs from here.'], ['l', 'Glowing rings mean puzzles. Tap one and we will scurry right over. Solve all three and the mouse hole opens!']],
     start: [0, 5], door: -4.5,
-    crumbs: [[-3, 4], [4, 6.2], [-6.5, 0], [9.5, -1], [1, 1.5]],
+    crumbs: [[-4.5, 1.8], [4, 6.2], [-6.5, 0], [9.5, -1], [1, 1.5]],
     jokes: [['l', 'The fridge hums all day. I think it is singing to the cheese.'], ['v', 'Why did the toast blush? It saw the salad dressing.']],
     puzzles: [
       { id: 'jar', name: 'The cookie jar scale', at: [6.5, -2.5], pref: 'axpb',
