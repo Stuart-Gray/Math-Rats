@@ -8,7 +8,8 @@ import { setupScreens } from './ui/screens.js';
 import { setupPuzzle, debugCur } from './ui/puzzle.js';
 import { setupCalculator } from './ui/calculator.js';
 import { setupInput, startLoop, walkTo } from './game/loop.js';
-import { loadLevel, begin } from './game/flow.js';
+import { loadLevel, begin, nextRoom } from './game/flow.js';
+import { skip as skipCutscene, cutsceneOn, seek as seekCutscene } from './game/cutscene.js';
 
 setupScreens(); setupPuzzle(); setupCalculator(); setupInput();
 
@@ -25,7 +26,7 @@ $('startBtn').addEventListener('click', () => begin(0, 0, 0, []));
 $('againBtn').addEventListener('click', () => { $('victory').hidden = true; begin(0, 0, 0, []); });
 
 // test hook for automated playtests: open the game with #debug
-if (location.hash === '#debug') window.__mr = { cur: debugCur, game, world, begin, walkTo };
+if (location.hash === '#debug') window.__mr = { cur: debugCur, game, world, begin, walkTo, nextRoom, skipCutscene, cutsceneOn, seekCutscene };
 
 // title backdrop: kitchen preview
 loadLevel(0, true); game.paused = true;

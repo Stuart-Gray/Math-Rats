@@ -2,6 +2,8 @@
 export const game = {
   level: 0, cheese: 0, head: 0, solved: 0,
   paused: true, started: false, transition: false,
+  cutscene: false,          // the intro or the ending is playing
+  ended: false,             // the ending has played; the victory card is up
   warmDone: false,          // each room opens with a one-step warm-up
   jokesFound: [],           // joke texts heard this run, for the joke book
   negTaught: false,         // shown how to type a negative answer yet?
@@ -15,4 +17,5 @@ export const world = {
   anim: [],                 // per-frame room animations (t, dt) => void
   catZs: [],
   lap: null,                // the toilet zoomies tracker
+  cage: null,               // the kitchen cage (its door swings open in the intro)
 };

@@ -267,3 +267,28 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--honey);outline-
 .tag{transition:opacity .2s}
 @keyframes rbpop{from{opacity:0;scale:.85}}
 @media (prefers-reduced-motion:reduce){.rb.in{animation:none}}
+
+/* Cutscenes: letterbox bars slide in, captions fade up in the bottom bar, the title glows in the middle.
+   While one plays (and under the victory card) the HUD, name tags and speech are hidden. */
+body.hud-off .hud, body.hud-off .tag, body.hud-off #actBtn, body.hud-off #talk, body.hud-off #ratTalk, body.hud-off #tapHint{visibility:hidden}
+.cine{position:fixed;inset:0;z-index:15;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
+.cine-bar{position:absolute;left:0;right:0;height:max(64px,13vh);background:#140d16;transition:transform .45s ease}
+.cine-bar.top{top:0;transform:translateY(-100%);display:flex;justify-content:flex-end;align-items:flex-start;
+  padding:calc(10px + env(safe-area-inset-top,0px)) calc(12px + env(safe-area-inset-right,0px)) 0 0;box-sizing:border-box}
+.cine-bar.bot{bottom:0;transform:translateY(100%);display:grid;place-items:center;
+  padding:0 max(16px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
+.cine.in .cine-bar{transform:none}
+.cine-skip{background:rgba(255,244,223,.14);color:var(--paper);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px}
+.cine-skip:hover{background:rgba(255,244,223,.25)}
+.cine-cap{display:flex;gap:10px;align-items:flex-start;max-width:min(680px,100%);color:var(--paper);font-size:clamp(15px,2.3vw,19px);line-height:1.35;
+  opacity:0;transform:translateY(6px);transition:opacity .35s,transform .35s}
+.cine-cap.on{opacity:1;transform:none}
+.cine-cap .who.v{background:var(--paper);color:var(--night)}
+.cine-cap .nar{font-style:italic;color:#e8d4a0}
+.cine-title{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.94);text-align:center;color:var(--paper);opacity:0;
+  transition:opacity .6s,transform .6s;pointer-events:none;width:min(92vw,720px);text-shadow:0 3px 0 rgba(0,0,0,.35),0 0 28px rgba(43,32,48,.8)}
+.cine-title.on{opacity:1;transform:translate(-50%,-50%)}
+.cine-title .k{display:block;color:var(--honey);font-family:var(--font-display);font-weight:700;font-size:clamp(14px,2.4vw,18px);letter-spacing:.04em}
+.cine-title b{display:block;font-family:var(--font-display);font-weight:900;font-size:clamp(34px,8vw,64px);line-height:1.05}
+.cine-title em{color:var(--honey)}
+@media (prefers-reduced-motion: reduce){.cine-bar,.cine-cap,.cine-title{transition:none}}

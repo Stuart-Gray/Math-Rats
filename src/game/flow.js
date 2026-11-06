@@ -12,6 +12,8 @@ import { audio, sfx } from '../audio/audio.js';
 import { say, clearSpeech, newScene } from '../ui/speech.js';
 import { syncPause, updateHud } from '../ui/screens.js';
 import { stopWalking } from './loop.js';
+import { play, introScript, endingScript } from './cutscene.js';
+import { buildStash, STASH_THEME } from '../rooms/stash.js';
 
 let deck = [];
 function buildDeck(R) {
@@ -29,7 +31,7 @@ export function drawJoke() {
 }
 
 export function loadLevel(r, silent) {
-  clearRoom(); game.level = r; game.solved = 0; game.warmDone = false;
+  clearRoom(); world.cage = null; game.level = r; game.solved = 0; game.warmDone = false;
   const R = ROOMS[r];
   world.floor = shell(R.theme); furnish(r, R); buildNav();
   world.puzzles = R.puzzles.map(def => { const mk = makeMarker(def.at[0], def.at[1], def.gemY); return { def, x: def.at[0], z: def.at[1], ...mk, solved: false, data: null }; });
@@ -48,9 +50,24 @@ export function loadLevel(r, silent) {
 
 export function begin(level, cheese, head, jokes) {
   audio.init(); audio.newSong(); audio.apply();
-  $('titleScreen').hidden = true; game.started = true;
+  $('titleScreen').hidden = true; game.started = true; game.ended = false; document.body.classList.remove('hud-off');
   game.cheese = cheese; game.head = head; game.jokesFound = jokes || []; game.negTaught = false;
   clearSpeech(); loadLevel(level); syncPause(); canvas.focus({ preventScroll: true });
+  // a new run opens with the cage-escape intro (skippable); a continued run goes straight in
+  if (level === 0) play(introScript(), () => canvas.focus({ preventScroll: true }));
+}
+
+/* The nook behind the attic's last mouse hole, where the ending plays. */
+function loadStash() {
+  clearRoom(); world.cage = null; world.puzzles = []; world.crumbs = [];
+  world.floor = shell(STASH_THEME); buildStash(); buildNav();
+  scene.fog = new THREE.Fog(STASH_THEME.bg, 30, 60); scene.background = new THREE.Color(STASH_THEME.bg);
+  stopWalking(); clearSpeech(); newScene();
+  $('roomNum').textContent = 'The very end'; $('roomName').textContent = 'The Legendary Snack Stash';
+}
+function showVictory() {
+  $('vCheese').textContent = game.cheese; $('vHead').textContent = game.head; $('vJokes').textContent = game.jokesFound.length;
+  $('vPuzzles').textContent = ROOMS.length * 3; game.ended = true; $('victory').hidden = false; syncPause(); $('againBtn').focus();
 }
 
 export function nextRoom() {
@@ -60,8 +77,9 @@ export function nextRoom() {
   f.classList.add('on');
   setTimeout(() => {
     if (last) {
-      f.classList.remove('on'); $('vCheese').textContent = game.cheese; $('vHead').textContent = game.head; $('vJokes').textContent = game.jokesFound.length;
-      $('vPuzzles').textContent = ROOMS.length * 3; $('victory').hidden = false; game.transition = false; syncPause(); clearRun(); return;
+      clearRun(); loadStash(); audio.newSong(); game.transition = false;
+      play(endingScript(), showVictory);
+      setTimeout(() => f.classList.remove('on'), 150); return;
     }
     loadLevel(game.level + 1); audio.newSong();
     setTimeout(() => { f.classList.remove('on'); game.transition = false; syncPause(); }, 900);

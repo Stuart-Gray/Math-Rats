@@ -125,7 +125,7 @@ export function kitchenDecor() {
     text(g, 'Recipe: Apple π', w / 2, 40, 46, '#c8414f');
     ['3.14 apples', '1 crust, round (obviously)', 'Bake for 2πr minutes', 'Serves: 2 rats, no leftovers'].forEach((l, i) => text(g, l, 30, 102 + i * 44, 30, '#3a2438', { align: 'left', weight: '400' }));
   } });
-  picture({ wall: 'left', at: 2.4, y: 3.4, w: 1.7, h: 2.1, frame: 0xf3ede2, frameW: 0.05, draw: (g, w, h) => {
+  picture({ wall: 'left', at: 0.7, y: 3.4, w: 1.7, h: 2.1, frame: 0xf3ede2, frameW: 0.05, draw: (g, w, h) => {
     g.fillStyle = '#fffaf0'; g.fillRect(0, 0, w, h); g.fillStyle = '#5f9272'; g.fillRect(0, 0, w, 90);
     text(g, 'CHEESE-UARY', w / 2, 46, 52, '#fff', { font: 'sans-serif', weight: '900' });
     const cw = w / 7; for (let d = 0; d < 28; d++) { const cx = (d % 7) * cw + cw / 2, cy = 130 + Math.floor(d / 7) * cw * 1.05; text(g, String(d + 1), cx, cy, 28, '#3a2438', { font: 'sans-serif', weight: '400' }); if (d === 13) { g.strokeStyle = '#c8414f'; g.lineWidth = 4; g.beginPath(); g.arc(cx, cy, 26, 0, 7); g.stroke(); } }
