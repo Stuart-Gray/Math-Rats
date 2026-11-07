@@ -11,7 +11,7 @@ A 3D browser algebra game for Stuart's daughter (grade 7). Her pet rats Velma an
 
 ## Commands
 - `npm run dev` — dev server. `npm test` — puzzle checker. `npm run build` — single-file build.
-- Automated playtests can open the built file with `#debug` to get `window.__mr` (current puzzle, game, world).
+- Automated playtests can open the built file with `#debug` to get `window.__mr` (current puzzle, game, world, velma, louise).
 
 ## Module map
 - `src/maths/` generator, hints, formatting. Pure, no DOM. `npm test` imports it.
@@ -42,6 +42,7 @@ A 3D browser algebra game for Stuart's daughter (grade 7). Her pet rats Velma an
 - Adaptive difficulty on: per-type levels; two quick clean solves in a row → up; 2+ slips or hints → down.
 - Speech: the bottom bar is for gameplay messages only (`say('n', …)` or `{ game: true }`), one at a time. Velma and Louise's jokes and chatter show as see-through bubbles above the speaking rat, one at a time, queued; `minor` chatter is skipped when busy. Timing based on length, paused while menus/puzzles are open; × or tap to close.
 - Rats idle with blinks, ear flicks, whisker twitches and breathing (`idleLife` in `rat.js`).
+- Rats never poke through the perimeter walls: `keepBodyInside` (loop.js) keeps nose and rump inside, `keepTailInside` (rat.js) swings or curls the tail along her side near a wall.
 
 ## Characters and tone
 - Velma and Louise travel side by side, Louise at Velma's side. Chocolate brown, cupped pink ears, fawn muzzle, pink nose, glossy black eyes, long whiskers, thick scaly tails. Louise is lighter with a broad white belly; Velma has a thin white chest stripe.
