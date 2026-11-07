@@ -2,7 +2,7 @@
    fawn muzzle, pink nose, glossy black eyes, long whiskers and thick scaly tails.
    Louise is lighter with a broad white belly; Velma has a thin white chest stripe. */
 import { THREE } from '../lib/three.js';
-import { scene, mesh } from '../rooms/world.js';
+import { scene, mesh, W, D } from '../rooms/world.js';
 
 /* rats — sculpted from Velma & Louise's photos */
 function furTextures(){
@@ -115,10 +115,11 @@ export function makeRat(isLouise){
     for(let j=0;j<=8;j++){ const idx=i*9+j; const v=new THREE.Vector3().fromBufferAttribute(tp,idx).sub(c).multiplyScalar(r).add(c); tp.setXYZ(idx,v.x,v.y,v.z); } }
   tg.computeVertexNormals();
   tail.add(mesh(tg,new THREE.MeshStandardMaterial({color:0xc29486,map:TAILTEX,roughness:0.55})));
+  const tailPts=[]; for(let k=1;k<=10;k++) tailPts.push(curve.getPointAt(k/10)); // checked against the walls each frame
   g.scale.setScalar(1.1);
   scene.add(g);
   const idle={blinkIn:1+Math.random()*3,blink:-1,ear:[{in:2+Math.random()*4,t:-1},{in:3+Math.random()*4,t:-1}],whisk:-1,whiskIn:1+Math.random()*2,breath:Math.random()*6};
-  return {g,body,tail,legs,ears,eyes,whiskers,idle,heading:0,moving:0,stride:0};
+  return {g,body,tail,tailPts,tailBend:0,legs,ears,eyes,whiskers,idle,heading:0,moving:0,stride:0};
 }
 
 /* Walk cycle: a quick rat trot. The legs swing from the hip and shoulder, paws lift on the
@@ -129,7 +130,7 @@ export function animateRat(r, dt, t, i) {
   const ph = r.stride;
   r.body.position.y = Math.abs(Math.sin(ph)) * 0.045 * m;
   r.body.rotation.x = Math.sin(ph) * 0.035 * m;
-  r.tail.rotation.y = Math.sin(t * (m > 0.2 ? 11 : 2.5) + i) * 0.35;
+  keepTailInside(r, Math.sin(t * (m > 0.2 ? 11 : 2.5) + i) * 0.35, dt);
   for (const L of r.legs) {
     const p = ph + L.phase, sw = Math.sin(p), lift = Math.max(0, -Math.cos(p)); // +x rotation swings the paw back, so it moves forward while cos < 0
     const amp = (L.front ? 0.55 : 0.5) * m;
@@ -138,6 +139,46 @@ export function animateRat(r, dt, t, i) {
     L.paw.rotation.x = -sw * amp - lift * 0.35 * m;    // keep the paw flat, toes up as it lifts
   }
   idleLife(r, dt, 1 - m);
+}
+
+/* Keep the tail inside the room: when she stands with her back to a wall, the tail swings
+   round to lie along her side (and curls up a little in a tight corner) instead of poking
+   through the wall. The tail pivots at its base, so we test points along it at a few angles. */
+const WALL_GAP = 0.15, SWING = [], MAX_SWING = 2.5;
+for (let a = 0.1; a <= MAX_SWING + 1e-6; a += 0.1) SWING.push(a);
+function tailInside(r, yaw, curl) {
+  const g = r.g, sc = g.scale.x, h = g.rotation.y, ch = Math.cos(h), sh = Math.sin(h), cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const bx = r.tail.position.x, bz = r.tail.position.z, lx = W / 2 - WALL_GAP, lz = D / 2 - WALL_GAP;
+  for (const p of r.tailPts) {
+    const px = p.x * curl, pz = p.z * curl;
+    const tx = bx + px * cy + pz * sy, tz = bz - px * sy + pz * cy;   // tail space -> rat space
+    const x = g.position.x + (tx * ch + tz * sh) * sc, z = g.position.z + (-tx * sh + tz * ch) * sc; // rat -> world
+    if (x < -lx || x > lx || z < -lz || z > lz) return false;
+  }
+  return true;
+}
+function keepTailInside(r, sway, dt) {
+  const p = r.g.position, inRoom = Math.abs(p.x) < W / 2 && Math.abs(p.z) < D / 2; // not while slipping through a mouse hole
+  let want = 0, curl = 1;
+  if (inRoom && !tailInside(r, sway, 1)) {
+    want = null;
+    for (curl = 1; curl >= 0.4 && want == null; curl -= 0.15) {
+      for (const a of SWING) {
+        // try the side she is already swinging to first, so the tail doesn't flip back and forth
+        const first = r.tailBend >= 0 ? a : -a;
+        if (tailInside(r, sway + first, curl)) { want = first; break; }
+        if (tailInside(r, sway - first, curl)) { want = -first; break; }
+      }
+    }
+    if (want == null) { want = r.tailBend; curl = 0.4; } else curl += 0.15;
+  }
+  // ease towards the new bend, but never let the eased tail cross the wall
+  const eased = r.tailBend + (want - r.tailBend) * Math.min(1, dt * 10);
+  r.tailBend = inRoom && !tailInside(r, sway + eased, curl) ? want : eased;
+  r.tailCurl = (r.tailCurl ?? 1) + (curl - (r.tailCurl ?? 1)) * Math.min(1, dt * 10);
+  if (curl < r.tailCurl) r.tailCurl = curl;
+  r.tail.rotation.y = sway + r.tailBend;
+  r.tail.scale.set(r.tailCurl, 1, r.tailCurl);
 }
 
 /* Little signs of life: blinks, ear flicks, whisker twitches and slow breathing.

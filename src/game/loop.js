@@ -122,6 +122,14 @@ function louiseSpot(vp, h) {
   for (const side of [louiseSide, -louiseSide]) { const x = vp.x + c * side - s * 0.15, z = vp.z - s * side - c * 0.15; if (ok(x, z)) { louiseSide = side; return [x, z]; } }
   return [vp.x - s * 1.1, vp.z - c * 1.1];
 }
+/* Her nose and rump sit about 1.1 in front of and behind her middle, so with her back (or nose)
+   to a wall she shuffles a little away from it rather than poking through. The tail then swings
+   round to lie along her side: see keepTailInside in rat.js. */
+function keepBodyInside(r) {
+  const p = r.g.position, fx = Math.sin(r.heading) * 1.1, fz = Math.cos(r.heading) * 1.1, lx = W / 2 - 0.12, lz = D / 2 - 0.12;
+  for (const k of [1, -1]) { const ex = p.x + fx * k, ez = p.z + fz * k;
+    p.x += Math.max(0, -lx - ex) - Math.max(0, ex - lx); p.z += Math.max(0, -lz - ez) - Math.max(0, ez - lz); }
+}
 function resolve(p, r) {
   p.x = Math.max(-W / 2 + 0.7, Math.min(W / 2 - 0.7, p.x)); p.z = Math.max(-D / 2 + 0.7, Math.min(D / 2 - 0.7, p.z));
   for (const c of world.cols) {
@@ -190,6 +198,7 @@ function tick() {
   louise.moving = lmove > 0.5 ? Math.min(1, louise.moving + dt * 6) : Math.max(0, louise.moving - dt * 5);
   louise.heading = angLerp(louise.heading, lmove > 0.5 ? Math.atan2(lp.x - ox, lp.z - oz) : velma.heading, Math.min(1, dt * 8));
   louise.g.rotation.y = louise.heading;
+  keepBodyInside(velma); keepBodyInside(louise);
   }
   [velma, louise].forEach((r, i) => animateRat(r, dt, t, i));
 
